@@ -1,0 +1,354 @@
+{
+  "github": {
+    "name": "GitHub",
+    "summary": "Reads one repository: its files, code search, and its issues and pull requests.",
+    "categories": [
+      "Code",
+      "Issues"
+    ],
+    "logo": {
+      "letter": "G",
+      "color": "#181717",
+      "image": "logos/github.svg"
+    },
+    "examples": [
+      "What does config/agents.json say about the textql agent?",
+      "Which open issues mention the scheduler?",
+      "Where is the Cliq read budget defined?"
+    ],
+    "sample": {
+      "installed": true,
+      "connected": true,
+      "values": {
+        "GITHUB_REPO": "kaliperdev/langgraph-prototype",
+        "GITHUB_TOKEN": "ghp_sample0000a1b2"
+      }
+    },
+    "connection": {
+      "method": "form",
+      "fields": [
+        {
+          "key": "GITHUB_REPO",
+          "label": "Repository",
+          "type": "text",
+          "required": true,
+          "placeholder": "owner/name",
+          "default": "kaliperdev/langgraph-prototype",
+          "pattern": "^[\\w.-]+/[\\w.-]+$",
+          "patternHelp": "Use owner/name, e.g. kaliperdev/langgraph-prototype",
+          "help": "The one repository this agent reads."
+        },
+        {
+          "key": "GITHUB_TOKEN",
+          "label": "Access token",
+          "type": "password",
+          "required": false,
+          "placeholder": "ghp_…",
+          "help": "Needed for private repositories and for higher rate limits."
+        }
+      ]
+    }
+  },
+  "gdocs": {
+    "name": "Google Docs",
+    "summary": "Searches and reads the Google Docs shared with your service account, at any folder depth.",
+    "categories": [
+      "Documents"
+    ],
+    "logo": {
+      "letter": "D",
+      "color": "#4285F4",
+      "image": "logos/googledocs.svg"
+    },
+    "examples": [
+      "Find the onboarding spec and summarise it",
+      "Which docs mention the pricing change?",
+      "What do the latest meeting notes say about next steps?"
+    ],
+    "sample": {
+      "installed": false,
+      "connected": false
+    },
+    "connection": {
+      "method": "form",
+      "fields": [
+        {
+          "key": "GOOGLE_SA_JSON",
+          "label": "Service account key",
+          "type": "file",
+          "required": true,
+          "help": "The JSON key file of a Google service account. Share the folders you want read with that account's email address."
+        }
+      ]
+    }
+  },
+  "knowledge": {
+    "name": "Knowledge base",
+    "summary": "Answers from captured Slack threads and the documents they link to, with every quotation checked against its source.",
+    "categories": [
+      "Knowledge",
+      "Decisions"
+    ],
+    "logo": {
+      "letter": "K",
+      "color": "#c2410c"
+    },
+    "examples": [
+      "What did we agree with the client about tracking?",
+      "Who decided to move the launch, and why?",
+      "What has been corrected about the GTM container?"
+    ],
+    "sample": {
+      "installed": true,
+      "connected": true
+    },
+    "connection": {
+      "method": "builtin",
+      "covers": [
+        "KNOWLEDGE_URL"
+      ],
+      "note": "Runs on this server. Nothing to connect.",
+      "fields": []
+    }
+  },
+  "jira": {
+    "name": "Jira",
+    "summary": "Searches and reads Jira issues across every project the account can see, including status, assignee and comments.",
+    "categories": [
+      "Tickets",
+      "Projects"
+    ],
+    "logo": {
+      "letter": "J",
+      "color": "#0052CC",
+      "image": "logos/jira.svg"
+    },
+    "examples": [
+      "What's the status of the checkout bug?",
+      "Which issues were assigned to me this week?",
+      "List the open issues in the DATA project"
+    ],
+    "sample": {
+      "installed": true,
+      "connected": true,
+      "values": {
+        "JIRA_DOMAIN": "acme.atlassian.net",
+        "JIRA_EMAIL": "ops@acme.example",
+        "JIRA_API_TOKEN": "sample-token-c3d4"
+      }
+    },
+    "connection": {
+      "method": "form",
+      "fields": [
+        {
+          "key": "JIRA_DOMAIN",
+          "label": "Jira site",
+          "type": "text",
+          "required": true,
+          "placeholder": "yourcompany.atlassian.net",
+          "pattern": "^[A-Za-z0-9-]+\\.atlassian\\.net$",
+          "patternHelp": "Just the site name, e.g. yourcompany.atlassian.net (no https://)"
+        },
+        {
+          "key": "JIRA_EMAIL",
+          "label": "Account email",
+          "type": "email",
+          "required": true,
+          "placeholder": "you@yourcompany.com",
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "patternHelp": "An email address, e.g. you@yourcompany.com"
+        },
+        {
+          "key": "JIRA_API_TOKEN",
+          "label": "API token",
+          "type": "password",
+          "required": true,
+          "help": "Create one at id.atlassian.com, under Security, API tokens."
+        }
+      ]
+    }
+  },
+  "slack": {
+    "name": "Slack",
+    "summary": "Searches and reads conversations in the channels the bot has been invited to.",
+    "categories": [
+      "Chat"
+    ],
+    "logo": {
+      "letter": "S",
+      "color": "#4A154B",
+      "image": "logos/slack.svg"
+    },
+    "examples": [
+      "What was decided in #launch about the date?",
+      "Summarise yesterday's thread about the outage",
+      "Which channels can you read?"
+    ],
+    "sample": {
+      "installed": true,
+      "connected": true,
+      "values": {
+        "SLACK_BOT_TOKEN": "xoxb-sample-e5f6",
+        "SLACK_USER_TOKEN": "xoxp-sample-g7h8"
+      }
+    },
+    "connection": {
+      "method": "form",
+      "fields": [
+        {
+          "key": "SLACK_BOT_TOKEN",
+          "label": "Bot token",
+          "type": "password",
+          "required": true,
+          "placeholder": "xoxb-…",
+          "pattern": "^xoxb-",
+          "patternHelp": "A bot token starts with xoxb-"
+        },
+        {
+          "key": "SLACK_USER_TOKEN",
+          "label": "User token",
+          "type": "password",
+          "required": true,
+          "placeholder": "xoxp-…",
+          "pattern": "^xoxp-",
+          "patternHelp": "A user token starts with xoxp-",
+          "help": "Needed for search, which Slack only allows with a user token."
+        }
+      ]
+    }
+  },
+  "cliq": {
+    "name": "Zoho Cliq",
+    "summary": "Searches and reads Zoho Cliq channels and the threads inside them.",
+    "categories": [
+      "Chat"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#ffffff",
+      "image": "logos/cliq.svg"
+    },
+    "examples": [
+      "What did the team discuss in the ops channel today?",
+      "Find the thread about the invoice delay",
+      "Which Cliq channels can you see?"
+    ],
+    "sample": {
+      "installed": false,
+      "connected": false
+    },
+    "connection": {
+      "method": "signin",
+      "provider": "Zoho",
+      "covers": [
+        "ZOHO_CLIENT_ID",
+        "ZOHO_CLIENT_SECRET",
+        "ZOHO_REFRESH_TOKEN"
+      ],
+      "fields": [
+        {
+          "key": "ZOHO_DC",
+          "label": "Zoho data centre",
+          "type": "select",
+          "required": true,
+          "options": [
+            "com",
+            "eu",
+            "in",
+            "com.au",
+            "jp",
+            "ca"
+          ],
+          "default": "com",
+          "help": "Where your Zoho account lives: the end of your Zoho address, e.g. zoho.com or zoho.eu."
+        }
+      ]
+    }
+  },
+  "workdrive": {
+    "name": "Zoho WorkDrive",
+    "summary": "Lists WorkDrive folders and files, who they're shared with, and reads the text inside documents.",
+    "categories": [
+      "Files",
+      "Documents"
+    ],
+    "logo": {
+      "letter": "W",
+      "color": "#ffffff",
+      "image": "logos/workdrive.svg"
+    },
+    "examples": [
+      "Which SOP covers the spade crimp size?",
+      "Who can access the Projects folder?",
+      "List the files in the Live folder"
+    ],
+    "sample": {
+      "installed": false,
+      "connected": false
+    },
+    "connection": {
+      "method": "signin",
+      "provider": "Zoho",
+      "covers": [
+        "WORKDRIVE_CLIENT_ID",
+        "WORKDRIVE_REFRESH_TOKEN"
+      ],
+      "fields": [
+        {
+          "key": "WORKDRIVE_MCP_URL",
+          "label": "WorkDrive MCP server URL",
+          "type": "password",
+          "required": true,
+          "placeholder": "https://…zohomcp.com/mcp/…/message",
+          "pattern": "^https://",
+          "patternHelp": "It starts with https://",
+          "help": "From your Zoho MCP console. It contains a secret, so treat it like a password."
+        }
+      ]
+    }
+  },
+  "textql": {
+    "name": "TextQL",
+    "summary": "Answers questions about the numbers in your connected databases through TextQL's analyst, Ana, including charts.",
+    "categories": [
+      "Data",
+      "Databases"
+    ],
+    "logo": {
+      "letter": "T",
+      "color": "#ffffff",
+      "image": "logos/textql.png"
+    },
+    "examples": [
+      "Which 5 start stations had the most trips?",
+      "Chart the number of trips per month",
+      "What was total revenue last quarter?"
+    ],
+    "sample": {
+      "installed": false,
+      "connected": false
+    },
+    "connection": {
+      "method": "form",
+      "fields": [
+        {
+          "key": "TEXTQL_API_KEY",
+          "label": "API key",
+          "type": "password",
+          "required": true,
+          "help": "A service account key from TextQL, under Settings, API Keys & Access."
+        },
+        {
+          "key": "TEXTQL_CONNECTOR_IDS",
+          "label": "Data connections",
+          "type": "text",
+          "required": true,
+          "placeholder": "70, 630",
+          "pattern": "^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$",
+          "patternHelp": "Connection numbers from TextQL, separated by commas",
+          "help": "Without at least one, Ana has no data to query."
+        }
+      ]
+    }
+  }
+}

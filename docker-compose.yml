@@ -1,0 +1,41 @@
+# The GLOBAL side of the agent catalog, on this laptop. Separate from any
+# client's stack on purpose: client servers reach it only through the
+# catalog service, never this database.
+name: agent-marketplace
+
+services:
+  catalog-db:
+    image: postgres:18-alpine
+    environment:
+      # Laptop only. Never reuse these on a server.
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog
+      POSTGRES_DB: catalog
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      # Postgres 18 images keep their data under /var/lib/postgresql/<major>/,
+      # so the volume mounts the parent.
+      - catalog_db_data:/var/lib/postgresql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  catalog-service:
+    # Read-only: GET /v1/catalog and friends. The only way client servers
+    # reach the catalog. Loopback only on this laptop.
+    build: .
+    environment:
+      CATALOG_DATABASE_URL: postgresql://catalog:catalog@catalog-db:5432/catalog
+    ports:
+      - "127.0.0.1:8095:8095"
+    depends_on:
+      catalog-db: {condition: service_healthy}
+    restart: unless-stopped
+
+volumes:
+  catalog_db_data:

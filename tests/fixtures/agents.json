@@ -1,0 +1,238 @@
+{
+  "sources": {
+    "github": {
+      "tools_factory": "app.agents:github_tools",
+      "answerer_factory": null,
+      "always_enabled": true
+    },
+    "gdocs": {
+      "tools_factory": "app.agents:gdocs_tools",
+      "answerer_factory": null,
+      "requires_credential": "GOOGLE_SA_JSON"
+    },
+    "knowledge": {
+      "tools_factory": "app.agents:knowledge_tools",
+      "answerer_factory": "app.tools.knowledge:knowledge_answerer",
+      "requires_credential": "KNOWLEDGE_URL"
+    },
+    "jira": {
+      "tools_factory": "app.agents:jira_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "JIRA_DOMAIN",
+        "JIRA_EMAIL",
+        "JIRA_API_TOKEN"
+      ]
+    },
+    "slack": {
+      "tools_factory": "app.agents:slack_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "SLACK_BOT_TOKEN",
+        "SLACK_USER_TOKEN"
+      ]
+    },
+    "cliq": {
+      "tools_factory": "app.agents:cliq_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "ZOHO_CLIENT_ID",
+        "ZOHO_CLIENT_SECRET",
+        "ZOHO_REFRESH_TOKEN"
+      ]
+    },
+    "workdrive": {
+      "tools_factory": "app.agents:workdrive_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "WORKDRIVE_MCP_URL",
+        "WORKDRIVE_CLIENT_ID",
+        "WORKDRIVE_REFRESH_TOKEN"
+      ]
+    },
+    "textql": {
+      "tools_factory": "app.tools.textql:textql_tools",
+      "answerer_factory": "app.tools.textql:textql_answerer",
+      "requires_credential": "TEXTQL_API_KEY"
+    }
+  },
+  "agents": [
+    {
+      "name": "github",
+      "source": "github",
+      "tools": [
+        "list_repo_files",
+        "read_repo_file",
+        "search_repo_code",
+        "list_repo_issues"
+      ],
+      "description": "Reads ONE specific repository, {github_repo}: its file tree, file contents, code search, and issue and pull-request history. It cannot read any other repository, so a question about a different repo is not for this agent.",
+      "owns": "You own exactly ONE GitHub repository: {github_repo} -- its code, configuration and its issue and pull-request history. You CANNOT read any other repository and you cannot follow a GitHub URL: your tools take no repository argument, so whatever repo a question names, you will read {github_repo} and nothing else. If a question is about a different repository, say plainly that you can only read {github_repo}. NEVER present what you read as if it were a different repository -- that is the failure this rule exists to prevent. Structure lives in configuration as well as in code -- config/agents.json defines which agents exist and what tools each holds, so read it before saying the repository does not describe itself. You DO own the design notes in corpus/ -- the canonical record of why this system is built the way it is, what was measured and what was rejected. The knowledge agent no longer reads them; it answers from captured business knowledge instead, so if you do not answer from corpus/ nobody will. You also do not own the shared Google Docs.\n\nEvery file and issue you list carries a GitHub URL, and a file's is pinned to the commit you read. When you report what a file or issue contains, GIVE THAT URL with it, so a reader opens the same revision you did."
+    },
+    {
+      "name": "gdocs",
+      "source": "gdocs",
+      "tools": [
+        "browse_drive",
+        "search_docs",
+        "read_google_doc"
+      ],
+      "description": "Searches and reads the Google Docs shared with the service account, at any folder depth: specs, plans, proposals, meeting notes and prose documentation that is not in the repository. A question naming a document without saying which system holds it may be here OR in workdrive OR captured in the knowledge base: a filename does not say which, so ask all three.",
+      "owns": "You own the shared Google Docs. Search first -- it reaches every document you can see, however deeply nested -- and browse only to orient yourself. You do not own the source repository.\n\nEvery document and folder in a listing carries a link. When you report what a document says, GIVE THAT LINK with it: a Drive id is something you pass to read_google_doc, not something a reader can open."
+    },
+    {
+      "name": "knowledge",
+      "source": "knowledge",
+      "tools": [
+        "ask_knowledge_base"
+      ],
+      "description": "Answers from the captured knowledge base: Slack threads and the documents they link to, stored verbatim and indexed as atomic facts. What clients asked for, what was decided, what was committed to, what was measured, and what a human has since corrected. Answers come back with their quotations already verified against the stored sources.",
+      "owns": "You own the captured knowledge base -- business knowledge about clients, projects, decisions and commitments, taken from Slack threads and the documents they link to and stored verbatim. Pass the user's question through as asked: the knowledge base runs its own retrieval and returns a written answer whose quotations have already been verified character-for-character against the stored sources. Reproduce those quotations exactly and never reword them. One call is usually enough; call again only for a genuinely different question, not to rephrase the same one. You do NOT own live Slack, Zoho Cliq or Jira -- those agents see what is happening now, and you see only what has been captured, which may be older. You also do not own the shared Google Docs or the source repository.",
+      "passthrough": true
+    },
+    {
+      "name": "jira",
+      "source": "jira",
+      "tools": [
+        "search_jira_issues",
+        "read_jira_issue",
+        "list_jira_projects"
+      ],
+      "description": "Searches and reads Jira issues across every project the account can see: what was requested, its status and assignee, and the comment thread where the decision was argued out.",
+      "owns": "You own the Jira issues: tickets, their status and their comment threads. You do not own the source repository, the shared Google Docs, or the design notes.\n\nEvery issue in a search result carries its BROWSE URL. When you report what a ticket says, GIVE THAT URL with it: an issue key alone is not a link, and a reader has to know the Jira domain to open one."
+    },
+    {
+      "name": "slack",
+      "source": "slack",
+      "tools": [
+        "search_slack",
+        "read_slack_thread",
+        "read_slack_channel",
+        "list_slack_channels"
+      ],
+      "description": "Searches and reads Slack conversations in the channels the bot has been invited to: what was discussed, who said it, and the threads where a decision was actually settled.",
+      "owns": "You own the Slack conversations. Search first, then open the thread a hit belongs to -- a parent message rarely carries the conclusion. You do NOT own Zoho Cliq -- that is a different chat tool with different channels, and a Slack answer must never be presented as a Cliq one. You also do not own the source repository, the shared Google Docs, the design notes, or Jira.\n\nEvery search result carries a PERMALINK column. When you report what a message said, GIVE THAT PERMALINK with it. A reader who cannot open the message you used cannot check it, and a quotation with no way back to its source reads the same whether it is accurate or not."
+    },
+    {
+      "name": "cliq",
+      "source": "cliq",
+      "tools": [
+        "search_cliq",
+        "read_cliq_chat",
+        "list_cliq_channels"
+      ],
+      "description": "Searches and reads Zoho Cliq conversations: channels and the threads inside them. A separate chat tool from Slack, with its own channels and its own history.",
+      "owns": "You own the Zoho Cliq conversations. Search first: it reaches inside threads and returns the matching text, so it is usually enough on its own, and reads are strictly limited. You do NOT own Slack -- that is a different chat tool with different channels, and a Cliq answer must never be presented as a Slack one. You also do not own the repository, the Google Docs, the design notes, or Jira.\n\nEvery search result carries a PERMALINK column. When you report what a message said, GIVE THAT PERMALINK with it. A reader who cannot open the message you used cannot check it, and a quotation with no way back to its source reads the same whether it is accurate or not."
+    },
+    {
+      "name": "workdrive",
+      "source": "workdrive",
+      "tools": [
+        "list_workdrive_folders",
+        "list_workdrive_shared_with_me",
+        "list_workdrive_files",
+        "list_my_workdrive_files",
+        "read_workdrive_file",
+        "who_can_access_workdrive_folder",
+        "list_workdrive_team_members",
+        "describe_workdrive_folder"
+      ],
+      "description": "Reads Zoho WorkDrive: which team folders exist, what files and subfolders are filed in them, who each folder is shared with, who is on the team, and the TEXT INSIDE a file. Holds spreadsheets, Word documents, presentations and PDFs -- the files a team keeps in a shared drive rather than writes in a wiki. Route here any question about what EXISTS, where it is filed, who can reach it, or what a WorkDrive document SAYS. A question naming a file or sheet without saying which system holds it may be here OR in gdocs OR captured in the knowledge base: a filename does not say which, so ask all three.",
+      "owns": "You own Zoho WorkDrive: its team folders, the names and dates of the files inside them, who each folder is shared with, the team's membership, and the contents of the documents themselves.\\n\\nStart by finding where the material is. list_workdrive_folders lists TEAM folders; list_workdrive_shared_with_me lists what others have SHARED with this account; list_my_workdrive_files reads this account's own My Folders and needs no id. An empty result from one of those is not an empty WorkDrive -- this workspace has no team folders at all, and its real work lives in a shared folder. Try the others before saying there is nothing.\\n\\nThen GO DEEPER. list_workdrive_files takes any folder id, including a SUBFOLDER's, and a folder's actual documents are usually several levels down -- a top-level listing that returns only folders means keep descending, not that the folder is empty. Follow the names toward what was asked for, but a name only NARROWS the candidates -- it never picks one. When a listing holds a handful of documents (up to about five) and the question names something specific -- a part, a size, a step, a value -- READ EVERY plausible candidate rather than the closest-sounding one, and say which you opened and which you did not. Measured 2026-09-21: asked what size spade crimp is used, in a folder of three SOPs, this agent opened the one named for a connector, found a different crimping instruction inside it, and answered confidently from the wrong document -- while 'Spiral Cable', which held the answer, sat unopened in the listing it had just read. A name that sounds adjacent is the trap, not the shortcut. Only when a listing is too large to read through does a name have to carry the choice alone.\\n\\nTo answer what a document SAYS, call read_workdrive_file with the file id from a listing. Word, Excel, PowerPoint, Zoho's own formats, OpenDocument, PDFs with selectable text, HTML, RTF and plain text are readable. A SCANNED pdf, an image, audio, video, an archive or a pre-2007 .doc/.xls/.ppt is NOT: the tool says which it is, and the honest answer is that the file exists and its contents are not readable here. NEVER guess at contents from a filename -- a filename is evidence of a name and nothing more.\n\nA listing gives each document's LINK beside its name. When you report what a document says, GIVE THAT LINK with it. A reader who cannot open the document you used cannot check it, and an answer drawn from the wrong file reads exactly like an answer drawn from the right one until they can. Measured 2026-09-21: this agent answered a question about a spade crimp from SOP FOR BATTERY POWER TAB CONNECTOR while the document holding the answer sat unopened in the same listing, and nothing in the reply revealed which file it had used. If the tool reports the text was TRUNCATED, say so rather than presenting a partial document as whole.\\n\\nYou do not own Google Docs, the repository, Jira, Slack or Cliq. Zoho WorkDrive and Google Docs are different document stores: a WorkDrive answer must never be presented as a Google Docs one."
+    },
+    {
+      "name": "textql",
+      "source": "textql",
+      "tools": [
+        "ask_textql"
+      ],
+      "description": "Answers questions about the numbers in the connected databases and data warehouses, through TextQL's analyst agent Ana: counts, totals, trends and breakdowns that need a query run over tables. It does not read chat, tickets, documents or code.",
+      "owns": "You own the connected databases and data warehouses, reached through TextQL's analyst agent Ana. Pass the user's question through as asked: Ana plans and runs her own queries and returns a written answer. One call is usually enough. You do NOT own Slack, Zoho Cliq, Jira, the Google Docs, WorkDrive, the captured knowledge base or the source repository -- a question about what someone said, decided or wrote belongs to those agents, not to a database.",
+      "passthrough": true,
+      "verbatim": true
+    }
+  ],
+  "tools": {
+    "list_repo_files": {
+      "description": "List every file path in {github_repo}. Call this first to orient yourself. This is the only repository you can read."
+    },
+    "read_repo_file": {
+      "description": "Read one file from {github_repo} by its exact path, as listed by list_repo_files."
+    },
+    "search_repo_code": {
+      "description": "Find files in {github_repo} containing a keyword. Prefer read_repo_file when you already know the path: this search is rate-limited to 10 calls per minute."
+    },
+    "list_repo_issues": {
+      "description": "List recent issues and pull requests in {github_repo}, with their titles and bodies."
+    },
+    "browse_drive": {
+      "description": "List what is in Drive. Call with no folder_id to see what is shared with you, then call it again with a folder's id to see inside that folder. Documents nested in subfolders are only visible by descending into them, so prefer search_docs when you know what you are looking for."
+    },
+    "search_docs": {
+      "description": "Find Google Docs whose title or body contains a word or phrase. This searches every document you can reach, however deeply nested, so it is the fastest way to locate material. Returns ids to pass to read_google_doc."
+    },
+    "read_google_doc": {
+      "description": "Read one Google Doc's full text by the id shown by search_docs or browse_drive."
+    },
+    "search_jira_issues": {
+      "description": "Find Jira issues. `query` searches the text of the ticket. `project` narrows to one project key, e.g. RUUBY. `status` filters by workflow status. THERE IS NO \"OPEN\" STATUS HERE: a search with no `status` returns every status including Done, so a question about OPEN tickets needs `status` set to the names that are not Done, comma-separated. Pass any name; one this Jira does not have comes back as the list of names it does, so a wrong guess costs one call rather than a wrong answer. Never leave `status` empty and then describe the result as the open ones. `assignee` is who HOLDS a ticket and `reporter` is who CREATED it -- different questions, so use the one that was asked; both take a person's name and are matched against Jira's own user list. `updated_since` bounds when a ticket last MOVED and `created_since` when it was MADE -- again different, and 'created last week' means created_since. Both take a date (2026-01-01) or a window (-7d); without either, only the last 30 days of updates are searched. Use these filters rather than putting words like \"open\", \"closed\" or a person's name into `query`: `query` searches ticket TEXT, so those match almost nothing. Returns issue keys for read_jira_issue."
+    },
+    "read_jira_issue": {
+      "description": "Read one Jira issue by its key, e.g. RUUBY-12: its fields, its description, and its comments. The comments usually carry the decision."
+    },
+    "list_jira_projects": {
+      "description": "List the Jira projects this account can see, as 'key<tab>name' lines. Use a key to narrow search_jira_issues."
+    },
+    "search_slack": {
+      "description": "Find Slack messages matching a word or phrase, across every channel you can see. This is the fastest way to locate a discussion. Each hit reports the channel and a thread timestamp to pass to read_slack_thread."
+    },
+    "read_slack_thread": {
+      "description": "Read a whole thread: its parent message and every reply, in order. Pass the channel id and the thread timestamp shown by search_slack or read_slack_channel. Threads are where decisions get argued out."
+    },
+    "read_slack_channel": {
+      "description": "Read the most recent messages in one channel by its id. Messages that have replies are marked with the thread timestamp needed to open them, so follow up with read_slack_thread rather than assuming the parent says everything."
+    },
+    "list_slack_channels": {
+      "description": "List the channels this bot has been invited to -- the only channels it can read. Returns 'name<tab>id' lines with topics."
+    },
+    "search_cliq": {
+      "description": "Find Zoho Cliq messages matching a word or phrase. Searches inside threads as well as channel timelines. Each hit names its channel and chat id. Zoho truncates long matches at about 100 characters and such hits are marked [truncated] — when the answer needs the rest, call read_cliq_chat with the chat id shown beside the hit."
+    },
+    "read_cliq_chat": {
+      "description": "Read recent messages from one Cliq channel by its chat id, as shown by list_cliq_channels or search_cliq. This returns the channel's main timeline; messages inside threads are reachable only through search_cliq. Use sparingly: reads are strictly limited."
+    },
+    "list_cliq_channels": {
+      "description": "List the Zoho Cliq channels this account belongs to, as 'name<tab>chat_id' lines. The chat id is what read_cliq_chat needs."
+    },
+    "ask_knowledge_base": {
+      "description": "Ask the captured knowledge base about clients, projects, decisions and commitments. Pass the user's question as asked -- this is not a keyword search: it runs its own hybrid retrieval, reranks, applies any human corrections, and returns a written answer with its quotations already verified against the stored sources. One call is usually enough."
+    },
+    "list_workdrive_folders": {
+      "description": "List every Zoho WorkDrive team folder you can see, with the folder id the other WorkDrive tools need. Call this first."
+    },
+    "list_workdrive_files": {
+      "description": "List the files and subfolders inside ANY WorkDrive folder, newest first -- a team folder, a shared folder, or a subfolder of either. Call it again on a subfolder's id to go deeper. Returns names and dates only; use read_workdrive_file for contents."
+    },
+    "list_my_workdrive_files": {
+      "description": "List the files in the WorkDrive My Folders of the account this connection authenticates as. Needs no folder id. Use it when there are no team folders, or when a file is the bot's own rather than the team's. Returns names and dates ONLY -- it cannot read what is inside a file."
+    },
+    "read_workdrive_file": {
+      "description": "Read the text inside one WorkDrive file, by the file id from a listing. Readable: Word, Excel, PowerPoint, Zoho Writer/Sheet/Show, OpenDocument, PDFs with selectable text, HTML, RTF and plain text. A spreadsheet returns one row per line. Not readable: scanned PDFs, images, audio, video, archives, and pre-2007 .doc/.xls/.ppt -- each says which it is rather than returning nothing."
+    },
+    "who_can_access_workdrive_folder": {
+      "description": "List the people and groups one WorkDrive team folder is shared with."
+    },
+    "list_workdrive_team_members": {
+      "description": "List the members of the WorkDrive team, optionally narrowed by a name or email fragment."
+    },
+    "describe_workdrive_folder": {
+      "description": "Describe one WorkDrive team folder: its name, description and configuration."
+    },
+    "list_workdrive_shared_with_me": {
+      "description": "List the folders and files other people have shared with this account, with the id the other WorkDrive tools need. Call it whenever the team-folder listing is empty: a shared folder is in neither team folders nor My Folders."
+    },
+    "ask_textql": {
+      "description": "Ask TextQL's analyst agent Ana a question about the connected databases. Pass the user's question as asked -- this is not a keyword search: Ana plans and runs her own queries and returns a written answer. One call is usually enough."
+    }
+  }
+}

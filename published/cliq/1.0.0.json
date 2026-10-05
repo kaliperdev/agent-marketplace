@@ -1,0 +1,80 @@
+{
+  "format": 1,
+  "id": "cliq",
+  "version": "1.0.0",
+  "kind": "builtin",
+  "needs_router": "0.1.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Zoho Cliq",
+    "summary": "Searches and reads Zoho Cliq channels and the threads inside them.",
+    "categories": [
+      "Chat"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#ffffff",
+      "image": "logos/cliq.svg"
+    },
+    "examples": [
+      "What did the team discuss in the ops channel today?",
+      "Find the thread about the invoice delay",
+      "Which Cliq channels can you see?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Zoho",
+    "covers": [
+      "ZOHO_CLIENT_ID",
+      "ZOHO_CLIENT_SECRET",
+      "ZOHO_REFRESH_TOKEN"
+    ],
+    "fields": [
+      {
+        "key": "ZOHO_DC",
+        "label": "Zoho data centre",
+        "type": "select",
+        "required": true,
+        "default": "com",
+        "options": [
+          "com",
+          "eu",
+          "in",
+          "com.au",
+          "jp",
+          "ca"
+        ],
+        "help": "Where your Zoho account lives: the end of your Zoho address, e.g. zoho.com or zoho.eu."
+      }
+    ]
+  },
+  "router": {
+    "source": "cliq",
+    "source_config": {
+      "tools_factory": "app.agents:cliq_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "ZOHO_CLIENT_ID",
+        "ZOHO_CLIENT_SECRET",
+        "ZOHO_REFRESH_TOKEN"
+      ]
+    },
+    "agent": {
+      "name": "cliq",
+      "source": "cliq",
+      "tools": [
+        "search_cliq",
+        "read_cliq_chat",
+        "list_cliq_channels"
+      ],
+      "description": "Searches and reads Zoho Cliq conversations: channels and the threads inside them. A separate chat tool from Slack, with its own channels and its own history.",
+      "owns": "You own the Zoho Cliq conversations. Search first: it reaches inside threads and returns the matching text, so it is usually enough on its own, and reads are strictly limited. You do NOT own Slack -- that is a different chat tool with different channels, and a Cliq answer must never be presented as a Slack one. You also do not own the repository, the Google Docs, the design notes, or Jira.\n\nEvery search result carries a PERMALINK column. When you report what a message said, GIVE THAT PERMALINK with it. A reader who cannot open the message you used cannot check it, and a quotation with no way back to its source reads the same whether it is accurate or not."
+    },
+    "tool_descriptions": {
+      "search_cliq": "Find Zoho Cliq messages matching a word or phrase. Searches inside threads as well as channel timelines. Each hit names its channel and chat id. Zoho truncates long matches at about 100 characters and such hits are marked [truncated] — when the answer needs the rest, call read_cliq_chat with the chat id shown beside the hit.",
+      "read_cliq_chat": "Read recent messages from one Cliq channel by its chat id, as shown by list_cliq_channels or search_cliq. This returns the channel's main timeline; messages inside threads are reachable only through search_cliq. Use sparingly: reads are strictly limited.",
+      "list_cliq_channels": "List the Zoho Cliq channels this account belongs to, as 'name<tab>chat_id' lines. The chat id is what read_cliq_chat needs."
+    }
+  }
+}

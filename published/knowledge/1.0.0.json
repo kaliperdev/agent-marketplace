@@ -1,0 +1,54 @@
+{
+  "format": 1,
+  "id": "knowledge",
+  "version": "1.0.0",
+  "kind": "builtin",
+  "needs_router": "0.1.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Knowledge base",
+    "summary": "Answers from captured Slack threads and the documents they link to, with every quotation checked against its source.",
+    "categories": [
+      "Knowledge",
+      "Decisions"
+    ],
+    "logo": {
+      "letter": "K",
+      "color": "#c2410c"
+    },
+    "examples": [
+      "What did we agree with the client about tracking?",
+      "Who decided to move the launch, and why?",
+      "What has been corrected about the GTM container?"
+    ]
+  },
+  "connection": {
+    "method": "builtin",
+    "covers": [
+      "KNOWLEDGE_URL"
+    ],
+    "note": "Runs on this server. Nothing to connect.",
+    "fields": []
+  },
+  "router": {
+    "source": "knowledge",
+    "source_config": {
+      "tools_factory": "app.agents:knowledge_tools",
+      "answerer_factory": "app.tools.knowledge:knowledge_answerer",
+      "requires_credential": "KNOWLEDGE_URL"
+    },
+    "agent": {
+      "name": "knowledge",
+      "source": "knowledge",
+      "tools": [
+        "ask_knowledge_base"
+      ],
+      "description": "Answers from the captured knowledge base: Slack threads and the documents they link to, stored verbatim and indexed as atomic facts. What clients asked for, what was decided, what was committed to, what was measured, and what a human has since corrected. Answers come back with their quotations already verified against the stored sources.",
+      "owns": "You own the captured knowledge base -- business knowledge about clients, projects, decisions and commitments, taken from Slack threads and the documents they link to and stored verbatim. Pass the user's question through as asked: the knowledge base runs its own retrieval and returns a written answer whose quotations have already been verified character-for-character against the stored sources. Reproduce those quotations exactly and never reword them. One call is usually enough; call again only for a genuinely different question, not to rephrase the same one. You do NOT own live Slack, Zoho Cliq or Jira -- those agents see what is happening now, and you see only what has been captured, which may be older. You also do not own the shared Google Docs or the source repository.",
+      "passthrough": true
+    },
+    "tool_descriptions": {
+      "ask_knowledge_base": "Ask the captured knowledge base about clients, projects, decisions and commitments. Pass the user's question as asked -- this is not a keyword search: it runs its own hybrid retrieval, reranks, applies any human corrections, and returns a written answer with its quotations already verified against the stored sources. One call is usually enough."
+    }
+  }
+}

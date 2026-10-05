@@ -40,6 +40,8 @@ services:
     build: .
     environment:
       CATALOG_DATABASE_URL: postgresql://catalog:catalog@catalog-db:5432/catalog
+      # One read key per client server, comma-separated (git-ignored .env); empty: open.
+      CATALOG_READ_KEYS: "${CATALOG_READ_KEYS:-}"
     ports:
       - "127.0.0.1:8095:8095"
     depends_on:

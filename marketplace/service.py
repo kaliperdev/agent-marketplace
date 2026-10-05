@@ -13,6 +13,7 @@ database. Read-only by construction: there is no handler for anything but GET.
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
 import os
 from collections.abc import Callable
@@ -35,7 +36,11 @@ def build_handler(
     versions: Versions = lambda agent_id: [],
     all_versions: AllVersions | None = None,
     access_log: bool = False,
+    read_keys: frozenset[str] = frozenset(),
 ) -> type[BaseHTTPRequestHandler]:
+    """`read_keys`: when set, every address but /health needs one of them as
+    x-catalog-key. The hosted catalog is reachable from the internet; only
+    client servers read it, each with its own key so one can be withdrawn."""
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format: str, *args) -> None:  # one line per request is noise here
             pass
@@ -52,12 +57,18 @@ def build_handler(
                 log("INFO" if code < 500 else "ERROR", "catalog", "response",
                     method="GET", path=redact(self.path.split("?", 1)[0], 200), status=code)
 
+        def _key_ok(self) -> bool:
+            given = (self.headers.get("x-catalog-key") or "").encode()
+            return any(hmac.compare_digest(given, key.encode()) for key in read_keys)
+
         def do_GET(self) -> None:
             path = self.path.split("?", 1)[0].rstrip("/") or "/"
             parts = path.split("/")
             try:
                 if path == "/health":
                     self._send(200, {"ok": True})
+                elif read_keys and not self._key_ok():
+                    self._send(401, {"error": "this catalog needs a read key (x-catalog-key)"})
                 elif path == "/v1/catalog":
                     self._send(200, {"format": FORMAT, "agents": latest()})
                 elif path == "/v1/catalog/page":
@@ -106,10 +117,13 @@ def main(argv: list[str] | None = None) -> int:
             return store.all_versions(conn)
 
     access_log = bool(os.environ.get("CATALOG_ACCESS_LOG"))  # set it to log every 200 too
+    # One key per client server, comma-separated, so one can be withdrawn alone.
+    read_keys = frozenset(k.strip() for k in os.environ.get("CATALOG_READ_KEYS", "").split(",") if k.strip())
     server = ThreadingHTTPServer(
-        (args.host, args.port), build_handler(latest, one, all_versions=all_versions, access_log=access_log)
+        (args.host, args.port),
+        build_handler(latest, one, all_versions=all_versions, access_log=access_log, read_keys=read_keys),
     )
-    log("INFO", "catalog", "listening", host=args.host, port=args.port)
+    log("INFO", "catalog", "listening", host=args.host, port=args.port, read_keys=len(read_keys))
     server.serve_forever()
     return 0
 

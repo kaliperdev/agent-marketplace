@@ -1,0 +1,53 @@
+# The global catalog, hosted for every client server (on Kaliper prod, behind
+# its Cloudflare tunnel as https://catalog.rytangle.com). From this folder:
+#
+#   docker compose -f hosted-catalog.yml --env-file catalog.env up -d
+#
+# catalog.env (never in git) holds CATALOG_DB_PASSWORD and CATALOG_READ_KEYS
+# (one key per client server, comma-separated). See README.md here.
+name: catalog
+
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+
+services:
+  catalog-db:
+    image: postgres:18
+    logging: *logging
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASSWORD:?set CATALOG_DB_PASSWORD in catalog.env}
+      POSTGRES_DB: catalog
+    # Postgres 18 keeps its data under /var/lib/postgresql/<major>/.
+    volumes: [catalog_db_data:/var/lib/postgresql]
+    # Only this machine: publishing reaches it over an SSH tunnel.
+    ports: ["127.0.0.1:55433:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"]
+      interval: 5s
+      retries: 20
+
+  catalog-service:
+    image: ghcr.io/kaliperdev/catalog-service:0.1.1
+    logging: *logging
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      CATALOG_DATABASE_URL: postgresql://catalog:${CATALOG_DB_PASSWORD}@catalog-db:5432/catalog
+      CATALOG_READ_KEYS: ${CATALOG_READ_KEYS:?set CATALOG_READ_KEYS in catalog.env}
+    depends_on:
+      catalog-db: {condition: service_healthy}
+    # Joined to the network the server's cloudflared runs on, so the tunnel
+    # reaches it as http://catalog-service:8095. No port on the machine itself.
+    networks: [default, tunnel]
+
+networks:
+  tunnel:
+    external: true
+    name: knowledge_default
+
+volumes:
+  catalog_db_data:

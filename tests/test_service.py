@@ -146,3 +146,51 @@ def test_successful_requests_are_not_logged_unless_asked(serve, capsys):
         server.shutdown()
         server.server_close()
     assert any("[catalog] response" in l and "path=/health" in l and "status=200" in l for l in lines(capsys))
+
+
+def _status(url, key=None):
+    request = urllib.request.Request(url, headers={"x-catalog-key": key} if key else {})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status
+    except urllib.error.HTTPError as err:
+        return err.code
+
+
+@pytest.fixture
+def keyed():
+    servers = []
+
+    def start(keys):
+        server = ThreadingHTTPServer(("127.0.0.1", 0), build_handler(
+            lambda: [], lambda agent_id, version: None, read_keys=frozenset(keys)))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        servers.append(server)
+        return f"http://127.0.0.1:{server.server_address[1]}"
+
+    yield start
+    for server in servers:
+        server.shutdown()
+        server.server_close()
+
+
+def test_with_read_keys_only_a_server_holding_one_can_read(keyed):
+    # The hosted catalog is reachable from the internet; only our servers read it.
+    base = keyed({"key-kaliper", "key-greendzine"})
+    assert _status(base + "/health") == 200  # the tunnel's own check needs no key
+    assert _status(base + "/v1/catalog") == 401
+    assert _status(base + "/v1/catalog", "wrong") == 401
+    assert _status(base + "/v1/catalog", "key-kaliper") == 200
+    assert _status(base + "/v1/catalog/page", "key-greendzine") == 200
+    assert _status(base + "/v1/agents/jira/versions/2.0.0") == 401
+
+
+def test_without_read_keys_the_catalog_stays_open(keyed):
+    assert _status(keyed(set()) + "/v1/catalog") == 200
+
+
+def test_a_refused_read_is_logged_without_the_key(keyed, capsys):
+    _status(keyed({"key-kaliper"}) + "/v1/catalog", "guessed-key-123")
+    out = capsys.readouterr()
+    lines = out.out + out.err
+    assert "status=401" in lines and "guessed-key-123" not in lines

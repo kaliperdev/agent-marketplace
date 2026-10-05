@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "id": "workdrive",
+  "version": "1.0.0",
+  "kind": "builtin",
+  "needs_router": "0.1.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Zoho WorkDrive",
+    "summary": "Lists WorkDrive folders and files, who they're shared with, and reads the text inside documents.",
+    "categories": [
+      "Files",
+      "Documents"
+    ],
+    "logo": {
+      "letter": "W",
+      "color": "#ffffff",
+      "image": "logos/workdrive.svg"
+    },
+    "examples": [
+      "Which SOP covers the spade crimp size?",
+      "Who can access the Projects folder?",
+      "List the files in the Live folder"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Zoho",
+    "covers": [
+      "WORKDRIVE_CLIENT_ID",
+      "WORKDRIVE_REFRESH_TOKEN"
+    ],
+    "fields": [
+      {
+        "key": "WORKDRIVE_MCP_URL",
+        "label": "WorkDrive MCP server URL",
+        "type": "password",
+        "required": true,
+        "placeholder": "https://…zohomcp.com/mcp/…/message",
+        "pattern": "^https://",
+        "patternHelp": "It starts with https://",
+        "help": "From your Zoho MCP console. It contains a secret, so treat it like a password."
+      }
+    ]
+  },
+  "router": {
+    "source": "workdrive",
+    "source_config": {
+      "tools_factory": "app.agents:workdrive_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "WORKDRIVE_MCP_URL",
+        "WORKDRIVE_CLIENT_ID",
+        "WORKDRIVE_REFRESH_TOKEN"
+      ]
+    },
+    "agent": {
+      "name": "workdrive",
+      "source": "workdrive",
+      "tools": [
+        "list_workdrive_folders",
+        "list_workdrive_shared_with_me",
+        "list_workdrive_files",
+        "list_my_workdrive_files",
+        "read_workdrive_file",
+        "who_can_access_workdrive_folder",
+        "list_workdrive_team_members",
+        "describe_workdrive_folder"
+      ],
+      "description": "Reads Zoho WorkDrive: which team folders exist, what files and subfolders are filed in them, who each folder is shared with, who is on the team, and the TEXT INSIDE a file. Holds spreadsheets, Word documents, presentations and PDFs -- the files a team keeps in a shared drive rather than writes in a wiki. Route here any question about what EXISTS, where it is filed, who can reach it, or what a WorkDrive document SAYS. A question naming a file or sheet without saying which system holds it may be here OR in gdocs OR captured in the knowledge base: a filename does not say which, so ask all three.",
+      "owns": "You own Zoho WorkDrive: its team folders, the names and dates of the files inside them, who each folder is shared with, the team's membership, and the contents of the documents themselves.\\n\\nStart by finding where the material is. list_workdrive_folders lists TEAM folders; list_workdrive_shared_with_me lists what others have SHARED with this account; list_my_workdrive_files reads this account's own My Folders and needs no id. An empty result from one of those is not an empty WorkDrive -- this workspace has no team folders at all, and its real work lives in a shared folder. Try the others before saying there is nothing.\\n\\nThen GO DEEPER. list_workdrive_files takes any folder id, including a SUBFOLDER's, and a folder's actual documents are usually several levels down -- a top-level listing that returns only folders means keep descending, not that the folder is empty. Follow the names toward what was asked for, but a name only NARROWS the candidates -- it never picks one. When a listing holds a handful of documents (up to about five) and the question names something specific -- a part, a size, a step, a value -- READ EVERY plausible candidate rather than the closest-sounding one, and say which you opened and which you did not. Measured 2026-09-21: asked what size spade crimp is used, in a folder of three SOPs, this agent opened the one named for a connector, found a different crimping instruction inside it, and answered confidently from the wrong document -- while 'Spiral Cable', which held the answer, sat unopened in the listing it had just read. A name that sounds adjacent is the trap, not the shortcut. Only when a listing is too large to read through does a name have to carry the choice alone.\\n\\nTo answer what a document SAYS, call read_workdrive_file with the file id from a listing. Word, Excel, PowerPoint, Zoho's own formats, OpenDocument, PDFs with selectable text, HTML, RTF and plain text are readable. A SCANNED pdf, an image, audio, video, an archive or a pre-2007 .doc/.xls/.ppt is NOT: the tool says which it is, and the honest answer is that the file exists and its contents are not readable here. NEVER guess at contents from a filename -- a filename is evidence of a name and nothing more.\n\nA listing gives each document's LINK beside its name. When you report what a document says, GIVE THAT LINK with it. A reader who cannot open the document you used cannot check it, and an answer drawn from the wrong file reads exactly like an answer drawn from the right one until they can. Measured 2026-09-21: this agent answered a question about a spade crimp from SOP FOR BATTERY POWER TAB CONNECTOR while the document holding the answer sat unopened in the same listing, and nothing in the reply revealed which file it had used. If the tool reports the text was TRUNCATED, say so rather than presenting a partial document as whole.\\n\\nYou do not own Google Docs, the repository, Jira, Slack or Cliq. Zoho WorkDrive and Google Docs are different document stores: a WorkDrive answer must never be presented as a Google Docs one."
+    },
+    "tool_descriptions": {
+      "list_workdrive_folders": "List every Zoho WorkDrive team folder you can see, with the folder id the other WorkDrive tools need. Call this first.",
+      "list_workdrive_shared_with_me": "List the folders and files other people have shared with this account, with the id the other WorkDrive tools need. Call it whenever the team-folder listing is empty: a shared folder is in neither team folders nor My Folders.",
+      "list_workdrive_files": "List the files and subfolders inside ANY WorkDrive folder, newest first -- a team folder, a shared folder, or a subfolder of either. Call it again on a subfolder's id to go deeper. Returns names and dates only; use read_workdrive_file for contents.",
+      "list_my_workdrive_files": "List the files in the WorkDrive My Folders of the account this connection authenticates as. Needs no folder id. Use it when there are no team folders, or when a file is the bot's own rather than the team's. Returns names and dates ONLY -- it cannot read what is inside a file.",
+      "read_workdrive_file": "Read the text inside one WorkDrive file, by the file id from a listing. Readable: Word, Excel, PowerPoint, Zoho Writer/Sheet/Show, OpenDocument, PDFs with selectable text, HTML, RTF and plain text. A spreadsheet returns one row per line. Not readable: scanned PDFs, images, audio, video, archives, and pre-2007 .doc/.xls/.ppt -- each says which it is rather than returning nothing.",
+      "who_can_access_workdrive_folder": "List the people and groups one WorkDrive team folder is shared with.",
+      "list_workdrive_team_members": "List the members of the WorkDrive team, optionally narrowed by a name or email fragment.",
+      "describe_workdrive_folder": "Describe one WorkDrive team folder: its name, description and configuration."
+    }
+  }
+}

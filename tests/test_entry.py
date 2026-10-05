@@ -506,6 +506,15 @@ def test_a_sign_in_that_cannot_work_is_refused(make, mutate, why):
     assert any(why in m for m in _broken_signin(make, mutate)), why
 
 
+@pytest.mark.parametrize("kind", ["remote", "builtin"])
+def test_only_an_mcp_agent_can_sign_in(kind):
+    # The router hands a sign-in's token only to an MCP agent's tool calls: an
+    # agent of any other kind would sign in and never be given its token.
+    entry = _own_google()
+    entry["kind"] = kind
+    assert any("kind mcp" in m for m in validate(entry))
+
+
 def test_a_sign_in_entry_is_written_out_in_order():
     from marketplace.entry import ordered
 

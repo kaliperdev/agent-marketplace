@@ -88,8 +88,9 @@ a vendor's tools (they return text), and "searched, found nothing" is not notice
 
 ## An agent that signs in ("Sign in with…")
 
-`connection.method` `"signin"`, `connection.provider` (the button says "Sign in
-with <provider>"), `"needs_router": "0.6.0"`, no `covers`, and:
+`"kind": "mcp"` (only an MCP agent is handed the token), `connection.method`
+`"signin"`, `connection.provider` (the button says "Sign in with <provider>"),
+`"needs_router": "0.6.0"`, no `covers`, and:
 
     "signin": {
       "client": "automatic",          // the vendor registers this server itself

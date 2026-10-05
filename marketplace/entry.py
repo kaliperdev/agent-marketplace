@@ -190,6 +190,9 @@ def _check_signin(entry: dict, connection: dict, signin: Any, fields: Any, hoste
         errors.append("connection.signin is an object, for connection.method \"signin\" only")
         return
     closed(signin, SIGNIN_KEYS, "connection.signin")
+    # The router hands a sign-in's token only to an MCP agent's tool calls: any
+    # other kind would sign in and never be given its token.
+    need(entry.get("kind") == "mcp", "only an MCP agent (kind mcp) can sign in: no other kind is handed the token")
     by_key = {f.get("key"): f for f in fields if isinstance(f, dict)} if isinstance(fields, list) else {}
     client = signin.get("client")
     need(client in ("automatic", "own-app"), 'connection.signin.client must be "automatic" or "own-app"')

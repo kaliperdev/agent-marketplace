@@ -1,10 +1,13 @@
-# The global catalog, hosted for every client server (on Kaliper prod, behind
-# its Cloudflare tunnel as https://catalog.rytangle.com). From this folder:
+# The global catalog, hosted for every client server (on Kaliper prod) as
+# https://catalog.rytangle.com, through its OWN Cloudflare tunnel: it shares
+# nothing with the bot on the same machine, which can be redeployed or removed
+# without touching it. From this folder:
 #
 #   docker compose -f hosted-catalog.yml --env-file catalog.env up -d
 #
-# catalog.env (never in git) holds CATALOG_DB_PASSWORD and CATALOG_READ_KEYS
-# (one key per client server, comma-separated). See README.md here.
+# catalog.env (never in git) holds CATALOG_DB_PASSWORD, CATALOG_READ_KEYS (one
+# key per client server, comma-separated) and TUNNEL_TOKEN (the tunnel
+# "rytangle-catalog"). See README.md here.
 name: catalog
 
 x-logging: &logging
@@ -40,14 +43,49 @@ services:
       CATALOG_READ_KEYS: ${CATALOG_READ_KEYS:?set CATALOG_READ_KEYS in catalog.env}
     depends_on:
       catalog-db: {condition: service_healthy}
-    # Joined to the network the server's cloudflared runs on, so the tunnel
-    # reaches it as http://catalog-service:8095. No port on the machine itself.
-    networks: [default, tunnel]
+    # No port on the machine: only the tunnel below reaches it, as
+    # http://catalog-service:8095.
 
-networks:
-  tunnel:
-    external: true
-    name: knowledge_default
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.1
+    logging: *logging
+    restart: unless-stopped
+    mem_limit: 64m
+    # The token is a secret: read from catalog.env, never written here.
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in catalog.env}
+    depends_on: [catalog-service]
+
+  # A dump a day into ./backups, kept 14 days. Every published version is also a
+  # file in git (published/), so a lost machine is rebuilt from git plus this.
+  catalog-backup:
+    image: postgres:18
+    logging: *logging
+    restart: unless-stopped
+    mem_limit: 64m
+    # The server user's ids, so its own account can read and remove the dumps.
+    user: "${BACKUP_UID:-1000}:${BACKUP_GID:-1000}"
+    environment:
+      PGPASSWORD: ${CATALOG_DB_PASSWORD}
+    volumes: ["./backups:/backups"]
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          if pg_dump -h catalog-db -U catalog catalog > /tmp/catalog.sql; then
+            gzip -c /tmp/catalog.sql > /backups/catalog-$$(date +%F).sql.gz
+            find /backups -name 'catalog-*.sql.gz' -mtime +14 -delete
+            echo "backup written: catalog-$$(date +%F).sql.gz"
+          else
+            echo "backup FAILED"
+          fi
+          rm -f /tmp/catalog.sql
+          sleep 86400
+        done
+    depends_on:
+      catalog-db: {condition: service_healthy}
 
 volumes:
   catalog_db_data:

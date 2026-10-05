@@ -1,13 +1,17 @@
 # Hosting the global catalog
 
 The catalog runs on Kaliper prod (`~/catalog`), and client servers read it at
-`https://catalog.rytangle.com` through that server's Cloudflare tunnel (public
-hostname `catalog.rytangle.com` -> `http://catalog-service:8095`).
+`https://catalog.rytangle.com` through its own Cloudflare tunnel,
+`rytangle-catalog` (published application `catalog.rytangle.com` ->
+`http://catalog-service:8095`). It shares nothing with the bot on the same
+machine: redeploying or removing the bot does not touch it. To move it, copy
+`~/catalog` and its data to another machine; the address follows the tunnel.
 
 ## catalog.env (on the server, never in git)
 
     CATALOG_DB_PASSWORD=<openssl rand -hex 24>
     CATALOG_READ_KEYS=<key for kaliper prod>,<key for sahil's mac>,<key for greendzine>
+    TUNNEL_TOKEN=<the rytangle-catalog tunnel's token>
 
 Each client server puts its own key in its root `.env` as `CATALOG_READ_KEY`,
 with `CATALOG_URL=https://catalog.rytangle.com`. Remove a key here to stop that
@@ -27,6 +31,7 @@ Upload the agent's package first (`agents/publish-image.sh`).
 ## Backup
 
 Every published version is also a file under `published/`, so the catalog can
-be rebuilt from git. A database dump on top:
+be rebuilt from git. On top of that, `catalog-backup` writes a dump a day to
+`~/catalog/backups/` and keeps 14 days. To restore one into an empty database:
 
-    docker exec catalog-catalog-db-1 pg_dump -U catalog catalog | gzip > catalog-$(date +%F).sql.gz
+    gunzip -c backups/catalog-<date>.sql.gz | docker exec -i catalog-catalog-db-1 psql -U catalog -d catalog

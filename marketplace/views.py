@@ -9,6 +9,7 @@ router_registry: router/config/agents.json, rebuilt from entries; with the
 from __future__ import annotations
 
 import re
+import urllib.parse
 
 from .entry import required_credentials
 
@@ -42,7 +43,8 @@ def page_view(entry: dict) -> dict:
         "credentials": required_credentials(entry),
         "connection": entry["connection"],
         "examples": display["examples"],
-    }
+    } | ({"runsAt": urllib.parse.urlsplit(entry["service"]["url"]).hostname}
+         if isinstance(entry.get("service"), dict) and "url" in entry["service"] else {})
 
 
 def router_registry(entries: list[dict]) -> dict:

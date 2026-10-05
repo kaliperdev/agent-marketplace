@@ -62,3 +62,12 @@ def test_any_setting_placeholder_reads_as_plain_words_on_the_page(entries):
     entry = copy.deepcopy(entries[0])
     entry["router"]["agent"]["description"] = "Reads {space_key}, beside {github_repo}."
     assert page_view(entry)["routerDescription"] == "Reads the configured space key, beside the configured repository."
+
+
+def test_an_agent_the_vendor_runs_says_where_it_runs(entries):
+    entry = copy.deepcopy(next(e for e in entries if e["id"] == "jira"))
+    entry["service"] = {"url": "https://mcp.linear.app/mcp/readonly"}
+    view = page_view(entry)
+    assert view["runsAt"] == "mcp.linear.app"
+    # An agent on the client's server says nothing of the sort.
+    assert "runsAt" not in page_view(next(e for e in entries if e["id"] == "jira"))

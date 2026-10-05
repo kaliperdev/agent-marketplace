@@ -22,6 +22,7 @@ import uuid
 from collections.abc import Sequence
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from agent_kit import auth
 from agent_kit.log import log, redact
 
 PROTOCOL_VERSION = "2025-06-18"
@@ -156,7 +157,9 @@ def build_handler(tools: Sequence, ready_error: str | None = None, name: str = "
                     log("WARN", "mcp", "bad request", reason="arguments must be an object", tool=tool.name, **ids)
                     error(-32602, "arguments must be an object")
                     return
-                reply(call(tool, arguments, **ids))
+                # An agent that signs in reads this call's token (agent_kit.auth).
+                with auth.serving(self.headers.get("authorization")):
+                    reply(call(tool, arguments, **ids))
             elif method == "ping":
                 reply({})
             else:

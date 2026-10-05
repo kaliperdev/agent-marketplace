@@ -6,7 +6,7 @@ import pytest
 from marketplace.views import page_view, router_registry
 
 PAGE_KEYS = {
-    "id", "name", "publisher", "version", "summary", "categories", "logo",
+    "id", "name", "publisher", "version", "needsRouter", "summary", "categories", "logo",
     "kind", "routerDescription", "capabilities", "credentials", "connection", "examples",
 }
 
@@ -48,3 +48,9 @@ def test_the_router_file_holds_only_builtin_agents(entries):
     remote = _json.loads((_Path(__file__).resolve().parent.parent / "agents" / "textql" / "catalog-2.0.0.json").read_text(encoding="utf-8"))
     builtin = [e for e in entries if e["id"] != "textql"]
     assert _router_registry(builtin + [remote]) == _router_registry(builtin)
+
+
+def test_the_page_view_says_which_router_an_agent_needs(entries):
+    from marketplace.views import page_view as _page_view
+
+    assert _page_view(entries[0])["needsRouter"] == entries[0]["needs_router"]

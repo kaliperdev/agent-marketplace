@@ -24,6 +24,7 @@ def page_view(entry: dict) -> dict:
         "name": display["name"],
         "publisher": entry["publisher"],
         "version": entry["version"],
+        "needsRouter": entry["needs_router"],
         "summary": display["summary"],
         "categories": display["categories"],
         "logo": display["logo"],

@@ -75,7 +75,7 @@ def test_a_passthrough_agent_needs_an_answerer(entries):
 
 
 def test_an_unknown_kind_is_refused(entries):
-    errors = _broken(entries, "jira", lambda e: e.__setitem__("kind", "mcp"))
+    errors = _broken(entries, "jira", lambda e: e.__setitem__("kind", "plugin"))
     assert any("kind" in m for m in errors)
 
 
@@ -216,3 +216,35 @@ def test_a_format_check_the_page_cannot_run_is_refused(entries):
     # not understand Python's named groups.
     errors = _broken(entries, "jira", lambda e: e["connection"]["fields"][0].__setitem__("pattern", r"^(?P<site>[a-z]+)\.atlassian\.net$"))
     assert any("JIRA_DOMAIN" in m and "pattern" in m for m in errors)
+
+
+AGENTS_DIR = Path(__file__).resolve().parent.parent / "agents"
+
+
+def _mcp(agent_id="jira"):
+    return json.loads((AGENTS_DIR / agent_id / "catalog-2.0.0.json").read_text(encoding="utf-8"))
+
+
+def _mcp_broken(mutate, agent_id="jira"):
+    entry = _mcp(agent_id)
+    mutate(entry)
+    return validate(entry)
+
+
+@pytest.mark.parametrize("agent_id", ["jira", "github", "slack", "cliq", "workdrive", "gdocs"])
+def test_the_mcp_entries_are_valid(agent_id):
+    assert validate(_mcp(agent_id)) == []
+
+
+def test_an_mcp_agent_needs_a_service():
+    assert any("needs a service" in m for m in _mcp_broken(lambda e: e.pop("service")))
+
+
+def test_an_mcp_agent_names_no_router_code():
+    errors = _mcp_broken(lambda e: e["router"]["source_config"].update({"tools_factory": "app.agents:jira_tools"}))
+    assert any("must be empty" in m for m in errors)
+
+
+def test_an_mcp_agent_is_driven_by_the_router_not_passed_through():
+    errors = _mcp_broken(lambda e: e["router"]["agent"].update({"passthrough": True}))
+    assert any("not passthrough" in m for m in errors)

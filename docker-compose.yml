@@ -3,8 +3,16 @@
 # catalog service, never this database.
 name: agent-marketplace
 
+# Every container's log is capped (10 MB x 3 files): unrotated, Docker's
+# json-file log grows until the disk is full. Agent containers, which the
+# settings service creates, get the same limit (router/app/agent_containers.py).
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+
 services:
   catalog-db:
+    logging: *logging
     image: postgres:18-alpine
     environment:
       # Laptop only. Never reuse these on a server.
@@ -26,6 +34,7 @@ services:
     restart: unless-stopped
 
   catalog-service:
+    logging: *logging
     # Read-only: GET /v1/catalog and friends. The only way client servers
     # reach the catalog. Loopback only on this laptop.
     build: .

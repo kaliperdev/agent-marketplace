@@ -15,8 +15,10 @@ from typing import Any
 
 FORMAT = 1
 # builtin: the code is inside the router. remote: the agent runs as its own
-# service (its own container on the client's server) and the router calls it.
-KINDS = {"builtin", "remote"}
+# service (its own container on the client's server) and answers whole
+# questions. mcp: the agent runs as its own MCP server and the router's model
+# drives its tools.
+KINDS = {"builtin", "remote", "mcp"}
 # An agent service's package name, like kaliper/agent-textql:2.0.0.
 _IMAGE = re.compile(r"^[a-z0-9][a-z0-9._/-]*:[A-Za-z0-9._-]+$")
 METHODS = {"form", "signin", "builtin"}
@@ -140,9 +142,10 @@ def validate(entry: Any) -> list[str]:
     need(parse_version(entry.get("needs_router")) is not None, "needs_router must look like 1.2.3")
     need(entry.get("kind") in KINDS, f"kind must be one of {sorted(KINDS)}")
     remote = entry.get("kind") == "remote"
-    if remote:
+    served = entry.get("kind") in ("remote", "mcp")
+    if served:
         service = _object(entry.get("service"))
-        need(isinstance(entry.get("service"), dict), "a remote agent needs a service (its image and port)")
+        need(isinstance(entry.get("service"), dict), "an agent that runs as its own service needs a service (its image and port)")
         closed(service, SERVICE_KEYS, "service")
         need(isinstance(service.get("image"), str) and bool(_IMAGE.match(service.get("image") or "")),
              "service.image must name a package like kaliper/agent-textql:2.0.0")
@@ -213,10 +216,13 @@ def validate(entry: Any) -> list[str]:
         need(_strings(config["requires_credentials"]), "router.source_config.requires_credentials must be a list of setting names")
     if config.get("requires_credential") is not None:
         need(_text(config["requires_credential"]), "router.source_config.requires_credential must be a setting name")
-    if remote:
+    if served:
         # The client fills this in: it names the container, so it knows the address.
-        need(config == {}, "a remote agent's router.source_config must be empty: the client fills in its address")
-        need(agent.get("passthrough") is True, "a remote agent must be passthrough: it answers whole questions")
+        need(config == {}, "an agent service's router.source_config must be empty: the client fills in its address")
+        if remote:
+            need(agent.get("passthrough") is True, "a remote agent must be passthrough: it answers whole questions")
+        else:
+            need(agent.get("passthrough") is not True, "an MCP agent is not passthrough: the router's model drives its tools")
     else:
         need(isinstance(config.get("tools_factory"), str) and bool(_FACTORY.match(config.get("tools_factory") or "")),
              "router.source_config.tools_factory must name code inside the router, like app.agents:jira_tools")

@@ -50,6 +50,8 @@ The database is the master copy. `uv run catalog export-router` prints
 Agents that run as their own service on a client's server, one package each.
 The client's settings service starts them; they are not part of any compose file.
 
+How to write one, and every entry key the platform reads: [docs/adding-an-agent.md](docs/adding-an-agent.md).
+
 | Folder | Kind | What |
 |---|---|---|
 | `agents/kit` | — | shared: serves an agent's LangChain tools over MCP (`POST /mcp`, `GET /health`), plus the rows/cache/settings helpers |

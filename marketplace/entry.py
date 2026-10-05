@@ -13,6 +13,7 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+import urllib.parse
 from typing import Any
 
 FORMAT = 1
@@ -48,10 +49,10 @@ _FACTORY = re.compile(r"^app(\.[a-z_]+)+:[a-z_]+$")
 # Each list is also the order entries are written out in: the database (jsonb)
 # re-sorts keys, so without this every export would come out scrambled.
 TOP_ORDER = ["format", "id", "version", "kind", "service", "needs_router", "publisher", "display", "connection", "router"]
-SERVICE_ORDER = ["image", "port", "timeout_seconds", "memory_mb", "start_seconds"]
+SERVICE_ORDER = ["image", "url", "port", "timeout_seconds", "memory_mb", "start_seconds", "max_result_chars"]
 DISPLAY_ORDER = ["name", "summary", "categories", "logo", "examples"]
 LOGO_ORDER = ["letter", "color", "image"]
-CONNECTION_ORDER = ["method", "provider", "covers", "note", "fields"]
+CONNECTION_ORDER = ["method", "provider", "covers", "note", "send", "fields"]
 FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "options", "pattern", "patternHelp", "accept",
                "help"]
 ROUTER_ORDER = ["source", "source_config", "agent", "tool_descriptions"]
@@ -64,6 +65,15 @@ CONNECTION_KEYS, FIELD_KEYS, ROUTER_KEYS = set(CONNECTION_ORDER), set(FIELD_ORDE
 AGENT_KEYS, SOURCE_KEYS, SERVICE_KEYS = set(AGENT_ORDER), set(SOURCE_ORDER), set(SERVICE_ORDER)
 
 _TOOL = re.compile(r"^[a-z][a-z0-9_]*$")
+# A vendor's own tool names: what MCP 2025-11-25 asks servers to use, plus the
+# "/" and ":" some still do.
+_VENDOR_TOOL = re.compile(r"^[A-Za-z0-9_.:/-]{1,128}$")
+# Every tool the router's model sees is also given the clock (router/app/tools/clock.py).
+RESERVED_TOOLS = {"current_time"}
+# How a vendor's server is sent the key typed into the form.
+_HEADER = re.compile(r"^[A-Za-z][A-Za-z0-9-]{0,63}$")
+RESERVED_HEADERS = {"host", "content-type", "content-length", "accept", "cookie", "mcp-protocol-version",
+                    "mcp-session-id", "mcp-method", "mcp-name", "x-request-id", "x-run-id"}
 # The page re-checks fields in the browser with JavaScript's RegExp, which has
 # no Python named groups, comments or \A / \Z anchors.
 _PYTHON_ONLY_REGEX = re.compile(r"\(\?P[<=]|\(\?#|\\[AZ]")
@@ -128,6 +138,23 @@ def _object(value: Any) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def safe_tool_name(name: str) -> str:
+    """The name the router's model is given for a vendor's tool: what both
+    Anthropic (^[a-zA-Z0-9_-]{1,128}$) and OpenAI (^[a-zA-Z0-9_-]{1,64}$)
+    accept. The router makes the same name (router/app/tools/mcp_tools.py) and
+    calls the vendor by its own."""
+    return re.sub(r"[^A-Za-z0-9_-]", "_", name)[:64]
+
+
+def _vendor_url(value: Any) -> bool:
+    if not isinstance(value, str) or len(value) > 512:
+        return False
+    parts = urllib.parse.urlsplit(value)
+    host = parts.hostname or ""
+    return (parts.scheme == "https" and "@" not in parts.netloc and not parts.fragment
+            and "." in host and not host.replace(".", "").isdigit())
+
+
 def _whole(value: Any, low: int, high: int) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and low <= value <= high
 
@@ -172,15 +199,33 @@ def validate(entry: Any) -> list[str]:
     need(entry.get("kind") in KINDS, f"kind must be one of {sorted(KINDS)}")
     remote = entry.get("kind") == "remote"
     served = entry.get("kind") in ("remote", "mcp")
+    # Run by the vendor at its own address, not on the client's server.
+    hosted = served and isinstance(entry.get("service"), dict) and "url" in entry["service"]
     if served:
         service = _object(entry.get("service"))
         need(isinstance(entry.get("service"), dict), "an agent that runs as its own service needs a service (its image and port)")
         closed(service, SERVICE_KEYS, "service")
-        need(isinstance(service.get("image"), str) and bool(_IMAGE.match(service.get("image") or "")),
-             "service.image must name a package like kaliper/agent-textql:2.0.0")
-        port = service.get("port")
-        need(isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
-             "service.port must be a number from 1 to 65535")
+        if hosted:
+            need(entry.get("kind") == "mcp", "service.url is for an MCP server the vendor runs (kind mcp)")
+            need("image" not in service and "port" not in service,
+                 "a service has an image and a port (it runs on the client's server) or a url "
+                 "(the vendor runs it), not both")
+            need(_vendor_url(service.get("url")),
+                 "service.url must be the vendor's https address, like https://mcp.linear.app/mcp")
+            for key in ("memory_mb", "start_seconds"):
+                need(key not in service, f"service.{key} is for a container; the vendor runs this one")
+            if "max_result_chars" in service:
+                need(_whole(service["max_result_chars"], 1000, 200_000),
+                     "service.max_result_chars must be a whole number from 1000 to 200000")
+            need((parse_version(entry.get("needs_router")) or (0, 0, 0)) >= (0, 5, 0),
+                 "an MCP server the vendor runs needs router 0.5.0 or later (needs_router)")
+        else:
+            need(isinstance(service.get("image"), str) and bool(_IMAGE.match(service.get("image") or "")),
+                 "service.image must name a package like kaliper/agent-textql:2.0.0")
+            port = service.get("port")
+            need(isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535,
+                 "service.port must be a number from 1 to 65535")
+            need("max_result_chars" not in service, "service.max_result_chars is for an MCP server the vendor runs")
         if "timeout_seconds" in service:
             seconds = service["timeout_seconds"]
             need(isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and 0 < seconds <= 600,
@@ -239,9 +284,22 @@ def validate(entry: Any) -> list[str]:
     need(_strings(tools), "router.agent.tools must list at least one tool")
     descriptions = _object(router.get("tool_descriptions"))
     seen_tools: set = set()
+    safe_names: dict[str, str] = {}
     for tool in tools if isinstance(tools, list) else []:
-        need(isinstance(tool, str) and bool(_TOOL.match(tool)),
-             f"{tool!r} is not a valid tool name (lowercase letters, digits and _)")
+        if hosted:
+            # The vendor's own names; the router hands the model safe_tool_name(name).
+            valid = isinstance(tool, str) and bool(_VENDOR_TOOL.match(tool))
+            need(valid, f"{tool!r} is not a valid tool name (letters, digits, _ - . : and /, up to 128)")
+            if valid:
+                safe = safe_tool_name(tool)
+                need(safe not in RESERVED_TOOLS, f"tool {tool!r} would be called {safe!r}, which current_time "
+                     "(the clock every agent has) already is")
+                need(safe not in safe_names or safe_names[safe] == tool,
+                     f"tools {safe_names.get(safe)!r} and {tool!r} would both be called {safe!r}: the same name")
+                safe_names.setdefault(safe, tool)
+        else:
+            need(isinstance(tool, str) and bool(_TOOL.match(tool)),
+                 f"{tool!r} is not a valid tool name (lowercase letters, digits and _)")
         need(tool not in seen_tools, f"tool {tool!r} is listed twice in router.agent.tools")
         if isinstance(tool, str):
             seen_tools.add(tool)
@@ -280,6 +338,7 @@ def validate(entry: Any) -> list[str]:
     need(method in METHODS, f"connection.method must be one of {sorted(METHODS)}")
     if method == "signin":
         need(_text(connection.get("provider")), "a sign-in connection needs connection.provider")
+        need(not hosted, "signing in to a vendor's own server needs router 0.6.0 and connection.signin")
     fields = connection.get("fields")
     need(isinstance(fields, list), "connection.fields must be a list")
     keys: set[str] = set()
@@ -308,6 +367,31 @@ def validate(entry: Any) -> list[str]:
             else:
                 need(not _PYTHON_ONLY_REGEX.search(field["pattern"]),
                      f"field {key!r} has a format check (pattern) the page cannot run in the browser")
+    send = connection.get("send")
+    if hosted and method == "form":
+        need(isinstance(send, dict), "a vendor's server needs connection.send: how its key is sent, "
+             "e.g. {\"bearer\": \"LINEAR_API_KEY\"}")
+    if send is not None:
+        types = {f.get("key"): f.get("type") for f in fields if isinstance(f, dict) and isinstance(f.get("key"), str)} \
+            if isinstance(fields, list) else {}
+        if not hosted:
+            errors.append("connection.send is for an MCP server the vendor runs (service.url)")
+        elif not isinstance(send, dict) or set(send) not in ({"bearer"}, {"header", "field"}, {"basic"}):
+            errors.append('connection.send must be {"bearer": "<FIELD>"}, {"header": "<Name>", "field": "<FIELD>"} '
+                          'or {"basic": ["<USER FIELD>", "<SECRET FIELD>"]}')
+        elif "basic" in send:
+            pair = send["basic"]
+            need(isinstance(pair, list) and len(pair) == 2 and all(isinstance(key, str) for key in pair)
+                 and types.get(pair[0]) in ("text", "email") and types.get(pair[1]) == "password",
+                 "connection.send.basic names a text or email field (the user) and a password field (the secret)")
+        else:
+            field = send.get("bearer", send.get("field"))
+            need(isinstance(field, str) and types.get(field) == "password",
+                 f"connection.send names {field!r}, which must be a password field of this form")
+            if "header" in send:
+                header = send["header"]
+                need(isinstance(header, str) and bool(_HEADER.match(header)) and header.lower() not in RESERVED_HEADERS,
+                     f"connection.send: {header!r} is not a header the key can be sent in")
     covers = connection.get("covers", [])
     need(_strings(covers, allow_empty=True), "connection.covers must be a list of setting names")
     covered = keys | {c for c in covers if isinstance(c, str)} if isinstance(covers, list) else keys

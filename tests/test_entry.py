@@ -313,3 +313,121 @@ def test_every_entry_in_the_agents_folder_is_valid(path):
     entry = json.loads(path.read_text(encoding="utf-8"))
     assert validate(entry) == []
     assert path.name == f"catalog-{entry['version']}.json" and path.parent.name == entry["id"]
+
+
+# ── an MCP server the vendor runs (router 0.5.0) ─────────────────────────────
+
+from marketplace.entry import safe_tool_name
+
+
+def _linear():
+    return {
+        "format": 1, "id": "linear", "version": "1.0.0", "kind": "mcp",
+        "service": {"url": "https://mcp.linear.app/mcp/readonly", "timeout_seconds": 60},
+        "needs_router": "0.5.0", "publisher": "Kaliper",
+        "display": {"name": "Linear", "summary": "Reads Linear issues and projects.", "categories": ["Engineering"],
+                    "logo": {"letter": "L", "color": "#5E6AD2"}, "examples": ["What is open in the Mobile project?"]},
+        "connection": {"method": "form", "send": {"bearer": "LINEAR_API_KEY"}, "fields": [
+            {"key": "LINEAR_API_KEY", "label": "API key", "type": "password", "required": True}]},
+        "router": {"source": "linear", "source_config": {},
+                   "agent": {"name": "linear", "source": "linear", "tools": ["list_issues", "get_issue"],
+                             "description": "Reads Linear: issues and their status.", "owns": "You own Linear issues."},
+                   "tool_descriptions": {"list_issues": "List issues.", "get_issue": "Read one issue."}},
+    }
+
+
+def _linear_broken(mutate):
+    entry = _linear()
+    mutate(entry)
+    return validate(entry)
+
+
+def test_an_mcp_server_the_vendor_runs_is_valid():
+    assert validate(_linear()) == []
+
+
+@pytest.mark.parametrize("url", [
+    "http://mcp.linear.app/mcp", "https://user:pw@mcp.linear.app/mcp", "https://mcp.linear.app/mcp#x",
+    "https://localhost/mcp", "mcp.linear.app/mcp", "https://" + "a" * 600 + ".com/mcp",
+])
+def test_the_vendors_address_must_be_a_plain_https_address(url):
+    assert any("service.url" in m for m in _linear_broken(lambda e: e["service"].update({"url": url})))
+
+
+def test_a_service_is_either_on_the_clients_server_or_the_vendors():
+    errors = _linear_broken(lambda e: e["service"].update({"image": "kaliper/agent-linear:1.0.0", "port": 8080}))
+    assert any("not both" in m for m in errors)
+    for key, value in (("memory_mb", 256), ("start_seconds", 30)):
+        assert any(f"service.{key}" in m for m in _linear_broken(lambda e: e["service"].update({key: value}))), key
+
+
+def test_a_vendors_server_may_cap_how_much_text_a_tool_returns():
+    assert _linear_broken(lambda e: e["service"].update({"max_result_chars": 40000})) == []
+    for bad in (10, 500000):
+        assert any("max_result_chars" in m for m in _linear_broken(
+            lambda e: e["service"].update({"max_result_chars": bad}))), bad
+    assert any("max_result_chars" in m for m in _mcp_broken(lambda e: e["service"].update({"max_result_chars": 40000})))
+
+
+def test_a_vendors_server_needs_router_0_5_0():
+    assert any("0.5.0" in m for m in _linear_broken(lambda e: e.update({"needs_router": "0.4.0"})))
+
+
+def test_how_the_key_is_sent_must_be_said_and_must_name_a_secret_field():
+    assert any("connection.send" in m for m in _linear_broken(lambda e: e["connection"].pop("send")))
+    assert any("connection.send" in m for m in _linear_broken(
+        lambda e: e["connection"].update({"send": {"bearer": "NOT_A_FIELD"}})))
+    assert any("connection.send" in m for m in _linear_broken(
+        lambda e: e["connection"]["fields"][0].update({"type": "text"})))
+    assert _linear_broken(lambda e: e["connection"].update(
+        {"send": {"header": "X-Api-Key", "field": "LINEAR_API_KEY"}})) == []
+    for header in ("Mcp-Session-Id", "Host", "bad header"):
+        assert any("connection.send" in m for m in _linear_broken(
+            lambda e: e["connection"].update({"send": {"header": header, "field": "LINEAR_API_KEY"}}))), header
+    # Only a vendor's server is sent a key this way.
+    assert any("connection.send" in m for m in _mcp_broken(
+        lambda e: e["connection"].update({"send": {"bearer": e["connection"]["fields"][0]["key"]}})))
+
+
+def test_a_vendors_tool_names_are_its_own():
+    names = ["notion-search", "searchJiraIssuesUsingJql", "fireflies_get_transcript", "a.b", "github/search_code",
+             "slack:read"]
+    def mutate(e):
+        e["router"]["agent"]["tools"] = names
+        e["router"]["tool_descriptions"] = {n: "d" for n in names}
+    assert _linear_broken(mutate) == []
+
+
+@pytest.mark.parametrize("names,why", [
+    (["a.b", "a_b"], "the same"),
+    (["current_time"], "current_time"),
+    (["has space"], "not a valid tool name (letters, digits, _ - . : and /, up to 128)"),
+])
+def test_a_vendors_tool_names_must_stay_distinct_when_made_safe(names, why):
+    def mutate(e):
+        e["router"]["agent"]["tools"] = names
+        e["router"]["tool_descriptions"] = {n: "d" for n in names}
+    assert any(why in m for m in _linear_broken(mutate)), names
+
+
+def test_a_safe_tool_name_is_what_every_model_accepts():
+    # Anthropic allows ^[a-zA-Z0-9_-]{1,128}$, OpenAI ^[a-zA-Z0-9_-]{1,64}$: the overlap.
+    assert safe_tool_name("notion-search") == "notion-search"
+    assert safe_tool_name("jira.search/issues") == "jira_search_issues"
+    assert len(safe_tool_name("x" * 100)) == 64
+
+
+def test_signing_in_to_a_vendors_server_is_not_offered_before_router_0_6_0():
+    errors = _linear_broken(lambda e: e["connection"].update({"method": "signin", "provider": "Linear"}))
+    assert any("0.6.0" in m for m in errors)
+
+
+def test_a_key_may_be_sent_as_basic_from_two_fields():
+    # Atlassian's API tokens: Authorization: Basic base64(email:token).
+    def basic(e, pair=("ATLASSIAN_EMAIL", "LINEAR_API_KEY")):
+        e["connection"]["fields"].insert(0, {"key": "ATLASSIAN_EMAIL", "label": "Email", "type": "email",
+                                             "required": True})
+        e["connection"]["send"] = {"basic": list(pair) if isinstance(pair, tuple) else pair}
+    assert _linear_broken(basic) == []
+    for bad in (("LINEAR_API_KEY", "LINEAR_API_KEY"), ("ATLASSIAN_EMAIL",), "ATLASSIAN_EMAIL", ({"x": 1}, "LINEAR_API_KEY")):
+        assert any("connection.send" in m for m in _linear_broken(lambda e, bad=bad: basic(e, bad))), bad

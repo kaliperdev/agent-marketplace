@@ -9,4 +9,5 @@ COPY textql_agent ./textql_agent
 RUN uv sync --frozen --no-dev
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
-CMD ["uv", "run", "--frozen", "--no-dev", "python", "-m", "textql_agent.server"]
+# The environment was built above; running it directly skips a re-sync on every start.
+CMD ["/app/.venv/bin/python", "-m", "textql_agent.server"]

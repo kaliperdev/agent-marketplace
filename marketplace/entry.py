@@ -10,6 +10,8 @@ the person who has to fix the file.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import re
 from typing import Any
 
@@ -31,6 +33,12 @@ _ID = re.compile(r"^[a-z][a-z0-9_-]*$")
 _SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 _COLOR = re.compile(r"^#[0-9a-fA-F]{3,8}$")
 _LOGO_IMAGE = re.compile(r"^logos/[a-z0-9-]+\.(svg|png)$")
+# Or the logo itself, so a new agent needs no file in the page's image. Drawn as
+# <img src>, where an SVG cannot run scripts.
+_LOGO_DATA = re.compile(r"^data:image/(svg\+xml|png);base64,([A-Za-z0-9+/]+={0,2})$")
+MAX_LOGO_CHARS = 64 * 1024
+# A key file field's accepted files: extensions or media types, comma-separated.
+_ACCEPT = re.compile(r"^(\.[a-z0-9]+|[a-z]+/[a-z0-9.+-]+)(,(\.[a-z0-9]+|[a-z]+/[a-z0-9.+-]+))*$")
 # The router imports whatever the catalog names here (importlib, in
 # router/app/agents.py), so only code inside the router package is allowed.
 _FACTORY = re.compile(r"^app(\.[a-z_]+)+:[a-z_]+$")
@@ -40,14 +48,16 @@ _FACTORY = re.compile(r"^app(\.[a-z_]+)+:[a-z_]+$")
 # Each list is also the order entries are written out in: the database (jsonb)
 # re-sorts keys, so without this every export would come out scrambled.
 TOP_ORDER = ["format", "id", "version", "kind", "service", "needs_router", "publisher", "display", "connection", "router"]
-SERVICE_ORDER = ["image", "port", "timeout_seconds"]
+SERVICE_ORDER = ["image", "port", "timeout_seconds", "memory_mb", "start_seconds"]
 DISPLAY_ORDER = ["name", "summary", "categories", "logo", "examples"]
 LOGO_ORDER = ["letter", "color", "image"]
 CONNECTION_ORDER = ["method", "provider", "covers", "note", "fields"]
-FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "options", "pattern", "patternHelp", "help"]
+FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "options", "pattern", "patternHelp", "accept",
+               "help"]
 ROUTER_ORDER = ["source", "source_config", "agent", "tool_descriptions"]
 # The router's own order in router/config/agents.json.
-AGENT_ORDER = ["name", "source", "tools", "description", "owns", "passthrough", "verbatim", "enabled", "extra_tools"]
+AGENT_ORDER = ["name", "source", "tools", "description", "owns", "passthrough", "verbatim", "enabled", "extra_tools",
+               "time_limit_seconds", "holds_documents", "first_for"]
 SOURCE_ORDER = ["tools_factory", "answerer_factory", "requires_credential", "requires_credentials", "always_enabled"]
 TOP_KEYS, DISPLAY_KEYS, LOGO_KEYS = set(TOP_ORDER), set(DISPLAY_ORDER), set(LOGO_ORDER)
 CONNECTION_KEYS, FIELD_KEYS, ROUTER_KEYS = set(CONNECTION_ORDER), set(FIELD_ORDER), set(ROUTER_ORDER)
@@ -58,7 +68,7 @@ _TOOL = re.compile(r"^[a-z][a-z0-9_]*$")
 # no Python named groups, comments or \A / \Z anchors.
 _PYTHON_ONLY_REGEX = re.compile(r"\(\?P[<=]|\(\?#|\\[AZ]")
 # The router tests these with truthiness, so "false" (a string) would mean ON.
-AGENT_SWITCHES = ("passthrough", "verbatim", "enabled")
+AGENT_SWITCHES = ("passthrough", "verbatim", "enabled", "holds_documents")
 
 
 def parse_version(text: Any) -> tuple[int, int, int] | None:
@@ -118,6 +128,25 @@ def _object(value: Any) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def _whole(value: Any, low: int, high: int) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and low <= value <= high
+
+
+def _logo_image(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    if _LOGO_IMAGE.match(value):
+        return True
+    data = _LOGO_DATA.match(value)
+    if not data or len(value) > MAX_LOGO_CHARS:
+        return False
+    try:
+        base64.b64decode(data.group(2), validate=True)
+    except (binascii.Error, ValueError):
+        return False
+    return True
+
+
 def validate(entry: Any) -> list[str]:
     if not isinstance(entry, dict):
         return ["an entry must be a JSON object"]
@@ -156,6 +185,10 @@ def validate(entry: Any) -> list[str]:
             seconds = service["timeout_seconds"]
             need(isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and 0 < seconds <= 600,
                  "service.timeout_seconds must be a number of seconds up to 600")
+        if "memory_mb" in service:
+            need(_whole(service["memory_mb"], 64, 2048), "service.memory_mb must be a whole number from 64 to 2048")
+        if "start_seconds" in service:
+            need(_whole(service["start_seconds"], 5, 300), "service.start_seconds must be a whole number from 5 to 300")
     else:
         need("service" not in entry, "only a remote agent has a service")
     need(_text(entry.get("publisher")), "publisher is required")
@@ -174,8 +207,9 @@ def validate(entry: Any) -> list[str]:
     need(isinstance(logo.get("color"), str) and bool(_COLOR.match(logo["color"])),
          "display.logo.color must be a colour like #1a73e8")
     if logo.get("image") is not None:
-        need(isinstance(logo["image"], str) and bool(_LOGO_IMAGE.match(logo["image"])),
-             "display.logo.image must look like logos/name.svg")
+        need(_logo_image(logo["image"]),
+             "display.logo.image must look like logos/name.svg, or be a data:image/svg+xml or "
+             "data:image/png base64 image of at most 64 KB")
 
     router = _object(entry.get("router"))
     need(isinstance(entry.get("router"), dict), "router is required")
@@ -189,6 +223,14 @@ def validate(entry: Any) -> list[str]:
             need(isinstance(agent[switch], bool), f"router.agent.{switch} must be true or false")
     if "extra_tools" in agent:
         need(_strings(agent["extra_tools"], allow_empty=True), "router.agent.extra_tools must be a list of tool names")
+    if "time_limit_seconds" in agent:
+        # The bot gives up on a question at 600 s: one agent may take up to 300,
+        # leaving time to plan, answer, and perhaps look once more.
+        need(_whole(agent["time_limit_seconds"], 30, 300),
+             "router.agent.time_limit_seconds must be a whole number from 30 to 300")
+    if "first_for" in agent:
+        need(_text(agent["first_for"]) and len(agent["first_for"]) <= 200,
+             "router.agent.first_for must be text of at most 200 characters, e.g. \"clients, projects and decisions\"")
     need(agent.get("name") == agent_id, "router.agent.name must equal id")
     need(agent.get("source") == source, "router.agent.source must equal router.source")
     need(_text(agent.get("description")), "router.agent.description is required")
@@ -254,6 +296,9 @@ def validate(entry: Any) -> list[str]:
             need(_strings(field.get("options")), f"field {key!r} is a dropdown with no options")
         need(_text(key) and _text(field.get("label")), "every connection field needs a key and a label")
         need(field.get("type") in FIELD_TYPES, f"field {key!r} has an unknown type {field.get('type')!r}")
+        if "accept" in field:
+            need(field.get("type") == "file" and isinstance(field["accept"], str) and bool(_ACCEPT.match(field["accept"])),
+                 f"field {key!r}: accept is for key files only, and lists extensions or types like .json,.pem")
         need(isinstance(field.get("required"), bool), f"field {key!r} must say whether it is required")
         if field.get("pattern") is not None:
             try:

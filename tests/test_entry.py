@@ -248,3 +248,61 @@ def test_an_mcp_agent_names_no_router_code():
 def test_an_mcp_agent_is_driven_by_the_router_not_passed_through():
     errors = _mcp_broken(lambda e: e["router"]["agent"].update({"passthrough": True}))
     assert any("not passthrough" in m for m in errors)
+
+
+# ── what an entry may now say about itself (router 0.4.0) ────────────────────
+
+import base64
+
+
+@pytest.mark.parametrize("key,good,bad", [
+    ("memory_mb", 512, 32),
+    ("start_seconds", 90, 1),
+])
+def test_an_mcp_agent_may_ask_for_its_own_memory_and_start_time(key, good, bad):
+    assert _mcp_broken(lambda e: e["service"].update({key: good})) == []
+    assert any(f"service.{key}" in m for m in _mcp_broken(lambda e: e["service"].update({key: bad})))
+    assert any(f"service.{key}" in m for m in _mcp_broken(lambda e: e["service"].update({key: True})))
+
+
+def test_an_agent_may_set_its_own_time_limit_within_what_the_bot_waits():
+    assert _mcp_broken(lambda e: e["router"]["agent"].update({"time_limit_seconds": 300})) == []
+    for bad in (10, 301, "300"):
+        errors = _mcp_broken(lambda e: e["router"]["agent"].update({"time_limit_seconds": bad}))
+        assert any("time_limit_seconds" in m for m in errors), bad
+
+
+def test_an_agent_may_say_it_holds_documents_and_what_to_ask_it_first():
+    ok = _mcp_broken(lambda e: e["router"]["agent"].update(
+        {"holds_documents": True, "first_for": "meetings and what was said in them"}))
+    assert ok == []
+    assert any("holds_documents" in m for m in _mcp_broken(
+        lambda e: e["router"]["agent"].update({"holds_documents": "yes"})))
+    for bad in ("", "x" * 201, 7):
+        assert any("first_for" in m for m in _mcp_broken(
+            lambda e: e["router"]["agent"].update({"first_for": bad}))), bad
+
+
+def test_a_key_file_field_may_say_which_files_it_takes():
+    def with_accept(accept, field_type="file"):
+        def mutate(e):
+            e["connection"]["fields"][0].update({"type": field_type, "accept": accept})
+        return _mcp_broken(mutate)
+
+    assert with_accept(".json,.pem,application/json") == []
+    assert any("accept" in m for m in with_accept("json; rm -rf"))
+    assert any("accept" in m for m in with_accept(".json", field_type="text"))
+
+
+def _svg_logo(size=200):
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect/></svg>' + b" " * size
+    return "data:image/svg+xml;base64," + base64.b64encode(svg).decode()
+
+
+def test_a_logo_may_travel_in_the_entry():
+    assert _mcp_broken(lambda e: e["display"]["logo"].update({"image": _svg_logo()})) == []
+    assert _mcp_broken(lambda e: e["display"]["logo"].update({"image": "logos/jira.svg"})) == []
+    too_big = _svg_logo(size=64 * 1024)
+    for bad in (too_big, "data:image/svg+xml;base64,not*base64", "data:text/html;base64,PGI+", "https://x.example/a.svg"):
+        assert any("display.logo.image" in m for m in _mcp_broken(
+            lambda e: e["display"]["logo"].update({"image": bad}))), bad[:40]

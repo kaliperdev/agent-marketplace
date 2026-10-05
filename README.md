@@ -49,15 +49,23 @@ Each folder holds its catalog entry (`catalog-<version>.json`), so the package
 and the entry it serves travel together, and a test checks the server offers
 exactly the tools its entry names.
 
-Build a package (laptop; no registry yet) and publish its entry:
+Release a version: upload its package, then publish its entry.
 
-    docker build -f agents/jira/Dockerfile -t kaliper/agent-jira:2.0.0 agents
-    docker build -t kaliper/agent-textql:2.0.0 agents/textql    # TextQL: its own folder
+    agents/publish-image.sh jira 2.0.0          # both chips (x86 + ARM) -> ghcr.io/kaliperdev/agent-jira:2.0.0
     uv run catalog import agents/jira/catalog-2.0.0.json
 
+`publish-image.sh` refuses a version that does not match the agent's
+`pyproject.toml`, or one already uploaded (published versions are locked, as in
+the catalog). It needs a one-time `gh auth token | docker login ghcr.io -u
+kaliperdev --password-stdin` with the `write:packages` permission. The images
+are private: a server downloads them with `AGENT_REGISTRY=ghcr.io/kaliperdev`
+and a read-only login in its root `.env` (see the rytangle catalog README). The
+catalog service ships the same way: `agents/publish-image.sh catalog-service 0.1.0`.
+
 A service gets only the settings its entry names (form fields, and what its
-sign-in `covers`), from the client's saved form or that server's `.env`; a
-`file` setting arrives as the file's contents. The built-in 1.x versions stay in
+sign-in `covers`), from what was saved on that server's page (`adopt` copies
+existing logins from its `.env` once); a `file` setting arrives as the file's
+contents. The built-in 1.x versions stay in
 the router until every server runs the catalog.
 
 `needs_router` in an entry is checked: a server whose router is older refuses it.

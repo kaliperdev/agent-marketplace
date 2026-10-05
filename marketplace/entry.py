@@ -52,7 +52,9 @@ TOP_ORDER = ["format", "id", "version", "kind", "service", "needs_router", "publ
 SERVICE_ORDER = ["image", "url", "port", "timeout_seconds", "memory_mb", "start_seconds", "max_result_chars"]
 DISPLAY_ORDER = ["name", "summary", "categories", "logo", "examples"]
 LOGO_ORDER = ["letter", "color", "image"]
-CONNECTION_ORDER = ["method", "provider", "covers", "note", "send", "fields"]
+CONNECTION_ORDER = ["method", "provider", "covers", "note", "send", "signin", "fields"]
+SIGNIN_ORDER = ["client", "client_id_field", "client_secret_field", "authorization_url", "token_url", "scopes",
+                "resource", "authorize_params"]
 FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "options", "pattern", "patternHelp", "accept",
                "help"]
 ROUTER_ORDER = ["source", "source_config", "agent", "tool_descriptions"]
@@ -62,6 +64,11 @@ AGENT_ORDER = ["name", "source", "tools", "description", "owns", "passthrough", 
 SOURCE_ORDER = ["tools_factory", "answerer_factory", "requires_credential", "requires_credentials", "always_enabled"]
 TOP_KEYS, DISPLAY_KEYS, LOGO_KEYS = set(TOP_ORDER), set(DISPLAY_ORDER), set(LOGO_ORDER)
 CONNECTION_KEYS, FIELD_KEYS, ROUTER_KEYS = set(CONNECTION_ORDER), set(FIELD_ORDER), set(ROUTER_ORDER)
+SIGNIN_KEYS = set(SIGNIN_ORDER)
+# What a sign-in's own steps set (router/app/oauth.py): an entry's
+# authorize_params may add to them, never replace them.
+SIGN_IN_PARAMS = {"response_type", "client_id", "redirect_uri", "state", "code_challenge",
+                  "code_challenge_method", "resource", "scope"}
 AGENT_KEYS, SOURCE_KEYS, SERVICE_KEYS = set(AGENT_ORDER), set(SOURCE_ORDER), set(SERVICE_ORDER)
 
 _TOOL = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -113,6 +120,8 @@ def ordered(entry: dict) -> dict:
         out["display"]["logo"] = _in_order(out["display"].get("logo"), LOGO_ORDER)
     if isinstance(out.get("connection"), dict):
         out["connection"] = _in_order(out["connection"], CONNECTION_ORDER)
+        if isinstance(out["connection"].get("signin"), dict):
+            out["connection"]["signin"] = _in_order(out["connection"]["signin"], SIGNIN_ORDER)
         if isinstance(out["connection"].get("fields"), list):
             out["connection"]["fields"] = [_in_order(f, FIELD_ORDER) for f in out["connection"]["fields"]]
     router = out.get("router")
@@ -172,6 +181,47 @@ def _logo_image(value: Any) -> bool:
     except (binascii.Error, ValueError):
         return False
     return True
+
+
+def _check_signin(entry: dict, connection: dict, signin: Any, fields: Any, hosted: bool, need, closed,
+                  errors: list[str]) -> None:
+    """connection.signin: how "Sign in with…" works for this agent (router 0.6.0)."""
+    if not isinstance(signin, dict) or connection.get("method") != "signin":
+        errors.append("connection.signin is an object, for connection.method \"signin\" only")
+        return
+    closed(signin, SIGNIN_KEYS, "connection.signin")
+    by_key = {f.get("key"): f for f in fields if isinstance(f, dict)} if isinstance(fields, list) else {}
+    client = signin.get("client")
+    need(client in ("automatic", "own-app"), 'connection.signin.client must be "automatic" or "own-app"')
+    urls = [key for key in ("authorization_url", "token_url") if key in signin]
+    need(len(urls) in (0, 2), "connection.signin names both authorization_url and token_url, or neither")
+    for key in urls:
+        need(_vendor_url(signin[key]), f"connection.signin.{key} must be an https address")
+    need(hosted or len(urls) == 2,
+         "an agent that signs in without a vendor's MCP server to ask needs authorization_url and token_url")
+    if client == "automatic":
+        need(hosted and not urls, "automatic sign-in registers with a vendor's MCP server: it needs service.url")
+    if client == "own-app":
+        id_field = by_key.get(signin.get("client_id_field"))
+        need(bool(id_field) and id_field.get("type") == "text",
+             "connection.signin.client_id_field must name a text field of this form (the app's client ID)")
+        if "client_secret_field" in signin:
+            secret_field = by_key.get(signin["client_secret_field"])
+            need(bool(secret_field) and secret_field.get("type") == "password",
+                 "connection.signin.client_secret_field must name a password field of this form")
+    if "scopes" in signin:
+        need(_strings(signin["scopes"]) and len(signin["scopes"]) <= 30,
+             "connection.signin.scopes must be a list of scope names")
+    if "resource" in signin:
+        need(isinstance(signin["resource"], bool), "connection.signin.resource must be true or false")
+    if "authorize_params" in signin:
+        params = signin["authorize_params"]
+        need(isinstance(params, dict) and len(params) <= 8
+             and all(isinstance(k, str) and isinstance(v, str) and k not in SIGN_IN_PARAMS for k, v in params.items()),
+             "connection.signin.authorize_params: up to 8 text values, none of them one the sign-in sets itself")
+    need(not connection.get("covers"), "a sign-in's tokens are not settings: connection.covers must be empty")
+    need((parse_version(entry.get("needs_router")) or (0, 0, 0)) >= (0, 6, 0),
+         "an agent with connection.signin needs router 0.6.0 or later (needs_router)")
 
 
 def validate(entry: Any) -> list[str]:
@@ -336,9 +386,11 @@ def validate(entry: Any) -> list[str]:
     closed(connection, CONNECTION_KEYS, "connection")
     method = connection.get("method")
     need(method in METHODS, f"connection.method must be one of {sorted(METHODS)}")
+    signin = connection.get("signin")
     if method == "signin":
         need(_text(connection.get("provider")), "a sign-in connection needs connection.provider")
-        need(not hosted, "signing in to a vendor's own server needs router 0.6.0 and connection.signin")
+        need(not hosted or isinstance(signin, dict),
+             "signing in to a vendor's own server needs connection.signin (router 0.6.0)")
     fields = connection.get("fields")
     need(isinstance(fields, list), "connection.fields must be a list")
     keys: set[str] = set()
@@ -367,7 +419,12 @@ def validate(entry: Any) -> list[str]:
             else:
                 need(not _PYTHON_ONLY_REGEX.search(field["pattern"]),
                      f"field {key!r} has a format check (pattern) the page cannot run in the browser")
+    if signin is not None:
+        _check_signin(entry, connection, signin, fields, hosted, need, closed, errors)
     send = connection.get("send")
+    if send is not None and method == "signin":
+        errors.append("connection.send is for a key typed into the form, not a sign-in")
+        send = None
     if hosted and method == "form":
         need(isinstance(send, dict), "a vendor's server needs connection.send: how its key is sent, "
              "e.g. {\"bearer\": \"LINEAR_API_KEY\"}")

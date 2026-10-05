@@ -431,3 +431,84 @@ def test_a_key_may_be_sent_as_basic_from_two_fields():
     assert _linear_broken(basic) == []
     for bad in (("LINEAR_API_KEY", "LINEAR_API_KEY"), ("ATLASSIAN_EMAIL",), "ATLASSIAN_EMAIL", ({"x": 1}, "LINEAR_API_KEY")):
         assert any("connection.send" in m for m in _linear_broken(lambda e, bad=bad: basic(e, bad))), bad
+
+
+# ── "Sign in with…" (router 0.6.0) ──────────────────────────────────────────
+
+
+def _notion():
+    entry = _linear()
+    entry.update({"id": "notion", "needs_router": "0.6.0"})
+    entry["service"] = {"url": "https://mcp.notion.com/mcp"}
+    entry["display"]["name"] = "Notion"
+    entry["connection"] = {"method": "signin", "provider": "Notion", "signin": {"client": "automatic"}, "fields": []}
+    entry["router"]["source"] = "notion"
+    entry["router"]["agent"].update({"name": "notion", "source": "notion", "tools": ["notion-search"]})
+    entry["router"]["tool_descriptions"] = {"notion-search": "Search Notion."}
+    return entry
+
+
+def _asana():
+    entry = _notion()
+    entry["service"] = {"url": "https://mcp.asana.com/v2/mcp"}
+    entry["connection"] = {"method": "signin", "provider": "Asana", "signin": {
+        "client": "own-app", "client_id_field": "ASANA_CLIENT_ID", "client_secret_field": "ASANA_CLIENT_SECRET"},
+        "fields": [{"key": "ASANA_CLIENT_ID", "label": "App client ID", "type": "text", "required": True},
+                   {"key": "ASANA_CLIENT_SECRET", "label": "App client secret", "type": "password", "required": True}]}
+    return entry
+
+
+def _own_google():
+    entry = _asana()
+    entry["service"] = {"image": "kaliper/agent-gdrive:1.0.0", "port": 8080}
+    entry["router"]["agent"]["tools"] = ["search_files"]
+    entry["router"]["tool_descriptions"] = {"search_files": "Search Drive."}
+    entry["connection"]["provider"] = "Google"
+    entry["connection"]["signin"].update({
+        "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "scopes": ["https://www.googleapis.com/auth/drive.readonly"],
+        "authorize_params": {"access_type": "offline", "prompt": "consent"}})
+    return entry
+
+
+@pytest.mark.parametrize("make", [_notion, _asana, _own_google], ids=["automatic", "own-app", "our-own-agent"])
+def test_the_three_shapes_of_sign_in_are_valid(make):
+    assert validate(make()) == []
+
+
+def _broken_signin(make, mutate):
+    entry = make()
+    mutate(entry["connection"]["signin"], entry)
+    return validate(entry)
+
+
+@pytest.mark.parametrize("make,mutate,why", [
+    (_own_google, lambda s, e: s.update({"client": "automatic", "client_id_field": None}), "automatic"),
+    (_notion, lambda s, e: s.update({"client": "magic"}), "client"),
+    (_asana, lambda s, e: s.pop("client_id_field"), "client_id_field"),
+    (_asana, lambda s, e: s.update({"client_id_field": "ASANA_CLIENT_SECRET"}), "client_id_field"),
+    (_asana, lambda s, e: s.update({"client_secret_field": "ASANA_CLIENT_ID"}), "client_secret_field"),
+    (_own_google, lambda s, e: s.pop("token_url"), "token_url"),
+    (_own_google, lambda s, e: s.update({"token_url": "http://oauth2.googleapis.com/token"}), "token_url"),
+    (_own_google, lambda s, e: s.update({"authorize_params": {"state": "x"}}), "authorize_params"),
+    (_own_google, lambda s, e: s.update({"authorize_params": {f"k{i}": "v" for i in range(9)}}), "authorize_params"),
+    (_own_google, lambda s, e: s.update({"authorize_params": {"prompt": 1}}), "authorize_params"),
+    (_own_google, lambda s, e: s.update({"scopes": ["read", ""]}), "scopes"),
+    (_notion, lambda s, e: s.update({"resource": "yes"}), "resource"),
+    (_notion, lambda s, e: s.update({"extra": 1}), "unknown key"),
+    (_notion, lambda s, e: e["connection"].update({"covers": ["NOTION_TOKEN"]}), "covers"),
+    (_notion, lambda s, e: e.update({"needs_router": "0.5.0"}), "0.6.0"),
+    (_notion, lambda s, e: e["connection"].update({"method": "form"}), "connection.signin"),
+    (_notion, lambda s, e: e["connection"].update({"send": {"bearer": "X"}}), "connection.send"),
+])
+def test_a_sign_in_that_cannot_work_is_refused(make, mutate, why):
+    assert any(why in m for m in _broken_signin(make, mutate)), why
+
+
+def test_a_sign_in_entry_is_written_out_in_order():
+    from marketplace.entry import ordered
+
+    signin = ordered(_own_google())["connection"]["signin"]
+    assert list(signin) == ["client", "client_id_field", "client_secret_field", "authorization_url", "token_url",
+                            "scopes", "authorize_params"]

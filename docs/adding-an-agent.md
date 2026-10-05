@@ -9,6 +9,7 @@ An agent is added without touching the platform (rytangle). You write the agent
 |---|---|---|
 | `mcp` | the router's model should drive the agent's tools (search, read) | a folder in `agents/` built with `agents/kit` |
 | `remote` | the agent answers whole questions itself (like TextQL) | a folder in `agents/` serving `POST /ask` |
+| `mcp` with `service.url` | the vendor already runs an MCP server (Linear, Fireflies, …) | only the entry: no folder, no package |
 
 ## 2. Write the agent (kind `mcp`)
 
@@ -49,6 +50,41 @@ Never put a secret field in a placeholder: secrets are never filled in.
 
 Set `needs_router` to the router version that has everything the entry uses
 (0.4.0 for any key in the table above that is new in 0.4.0).
+
+## An MCP server the vendor runs
+
+No code and no package: the entry points at the vendor's server.
+
+1. **List what it offers:** from rytangle's `router/`,
+
+       uv run python -m app.mcp_probe https://mcp.linear.app/mcp/readonly --ask-key --full
+
+   (`--ask-key` asks for the key without showing it.) A server that answers "needs
+   signing in" takes no key: it needs Part C's sign-in.
+2. **Choose reading tools only** for `router.agent.tools`, by the vendor's own
+   names. The probe shows the vendor's read-only marks, but they are hints: read
+   each description. If the vendor has a read-only address (Linear's
+   `/mcp/readonly`), use it. Copy each description into `router.tool_descriptions`.
+3. **The entry:**
+   - `"kind": "mcp"`, `"service": {"url": "https://…", "timeout_seconds": 60}`
+     (optionally `"max_result_chars"`, 1,000–200,000; default 60,000);
+   - `"needs_router": "0.5.0"`;
+   - `connection.method` `"form"`, one `password` field for the key, and
+     `"send": {"bearer": "<FIELD>"}` (sent as `Authorization: Bearer <key>`) or
+     `{"header": "<Name>", "field": "<FIELD>"}`; a key that goes with a user
+     name (an Atlassian personal API token, with its owner's email) also takes
+     a text or email field, and
+     `{"basic": ["<USER FIELD>", "<SECRET FIELD>"]}` (sent as
+     `Authorization: Basic …`);
+   - `router.source_config` `{}`; not `passthrough`.
+4. **Publish** the entry only (`deploy/publish-to-hosted.sh`): there is no package.
+
+On a client's page, Save asks the vendor's server whether it takes the key and
+that it still offers every tool the entry names; a refusal leaves the agent off
+with the reason. The router hands the model safe tool names (letters, digits,
+`_`, `-`; at most 64) and calls the vendor by its own; two tools that would get
+the same safe name are refused by the catalog. Charts and counts do not work for
+a vendor's tools (they return text), and "searched, found nothing" is not noticed.
 
 ## 4. Publish
 

@@ -306,3 +306,10 @@ def test_a_logo_may_travel_in_the_entry():
     for bad in (too_big, "data:image/svg+xml;base64,not*base64", "data:text/html;base64,PGI+", "https://x.example/a.svg"):
         assert any("display.logo.image" in m for m in _mcp_broken(
             lambda e: e["display"]["logo"].update({"image": bad}))), bad[:40]
+
+
+@pytest.mark.parametrize("path", sorted(AGENTS_DIR.glob("*/catalog-*.json")), ids=lambda p: f"{p.parent.name}/{p.name}")
+def test_every_entry_in_the_agents_folder_is_valid(path):
+    entry = json.loads(path.read_text(encoding="utf-8"))
+    assert validate(entry) == []
+    assert path.name == f"catalog-{entry['version']}.json" and path.parent.name == entry["id"]

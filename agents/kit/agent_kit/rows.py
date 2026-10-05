@@ -53,3 +53,16 @@ def no_rows() -> dict:
     was given cannot alter what every later caller gets.
     """
     return {"columns": [], "rows": [], "truncated": False}
+
+
+def nothing_found(what: str, where: str = "") -> tuple[str, dict]:
+    """What a search tool returns when it found nothing: the text and no rows.
+
+    The words are the router's, not a style choice: "no matches for:" in an
+    agent's answer is how the router knows a search came back empty, so it can
+    tell the reader what was searched and plan once more (rytangle
+    router/app/evaluate.py, BARREN). Say what was searched, as the person
+    would recognise it, and where.
+    """
+    text = f"no matches for: {what!r}" + (f" in {where}" if where else "")
+    return text, no_rows()

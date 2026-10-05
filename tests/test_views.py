@@ -54,3 +54,11 @@ def test_the_page_view_says_which_router_an_agent_needs(entries):
     from marketplace.views import page_view as _page_view
 
     assert _page_view(entries[0])["needsRouter"] == entries[0]["needs_router"]
+
+
+def test_any_setting_placeholder_reads_as_plain_words_on_the_page(entries):
+    # The router fills {space_key} from what a server saved; the catalog has no
+    # server, so the page says what it stands for instead of showing braces.
+    entry = copy.deepcopy(entries[0])
+    entry["router"]["agent"]["description"] = "Reads {space_key}, beside {github_repo}."
+    assert page_view(entry)["routerDescription"] == "Reads the configured space key, beside the configured repository."

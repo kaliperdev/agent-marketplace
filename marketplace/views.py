@@ -8,12 +8,18 @@ router_registry: router/config/agents.json, rebuilt from entries; with the
 
 from __future__ import annotations
 
+import re
+
 from .entry import required_credentials
+
+_PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 
 
 def _fill(text: str) -> str:
-    # The router fills this from GITHUB_REPO when it runs; a catalog has no runtime.
-    return str(text).replace("{github_repo}", "the configured repository")
+    # The router fills {setting} placeholders from what each server saved for
+    # the agent when it runs; a catalog has no server, so it says what they are.
+    return _PLACEHOLDER.sub(lambda m: "the configured repository" if m.group(1) == "github_repo"
+                            else f"the configured {m.group(1).replace('_', ' ')}", str(text))
 
 
 def page_view(entry: dict) -> dict:

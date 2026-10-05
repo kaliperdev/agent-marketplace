@@ -8,7 +8,7 @@ from marketplace.seed import entries_from_files
 
 FIX = Path(__file__).parent / "fixtures"
 TEST_URL = os.environ.get(
-    "CATALOG_TEST_DATABASE_URL", "postgresql://catalog:catalog@localhost:55433/catalog_test"
+    "CATALOG_TEST_DATABASE_URL", "postgresql://proto:proto@localhost:55432/catalog_test"
 )
 
 

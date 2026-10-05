@@ -19,14 +19,18 @@ server reading the catalog.
 
 ## Publishing a version
 
-The database listens only on the server. From a laptop:
+The database listens only on the server. From a laptop, after uploading the
+agent's package (`agents/publish-image.sh`):
 
-    ssh -N -L 55434:127.0.0.1:55433 ec2-user@<kaliper prod> &
-    CATALOG_DATABASE_URL=postgresql://catalog:<password>@127.0.0.1:55434/catalog \
-      uv run catalog import agents/jira/catalog-2.1.0.json
-    uv run catalog export jira --version 2.1.0 > published/jira/2.1.0.json   # the record, in git
+    deploy/publish-to-hosted.sh agents/jira/catalog-2.1.0.json
+    git add published/jira/2.1.0.json && git commit -m "publish jira 2.1.0"
 
-Upload the agent's package first (`agents/publish-image.sh`).
+It opens an SSH tunnel for the length of the command, publishes the entry, and
+saves the published record under `published/`. `deploy/publish-to-hosted.sh
+--list` shows what the hosted catalog holds. It reads `HOSTED_CATALOG_SSH`,
+`HOSTED_CATALOG_SSH_KEY` and `HOSTED_CATALOG_DATABASE_URL` from this repo's
+git-ignored `.env` (the password is `CATALOG_DB_PASSWORD` in the server's
+`~/catalog/catalog.env`).
 
 ## Backup
 

@@ -60,7 +60,7 @@ FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "op
 ROUTER_ORDER = ["source", "source_config", "agent", "tool_descriptions"]
 # The router's own order in router/config/agents.json.
 AGENT_ORDER = ["name", "source", "tools", "description", "owns", "passthrough", "verbatim", "enabled", "extra_tools",
-               "time_limit_seconds", "holds_documents", "first_for"]
+               "time_limit_seconds", "holds_documents", "first_for", "writes"]
 SOURCE_ORDER = ["tools_factory", "answerer_factory", "requires_credential", "requires_credentials", "always_enabled"]
 TOP_KEYS, DISPLAY_KEYS, LOGO_KEYS = set(TOP_ORDER), set(DISPLAY_ORDER), set(LOGO_ORDER)
 CONNECTION_KEYS, FIELD_KEYS, ROUTER_KEYS = set(CONNECTION_ORDER), set(FIELD_ORDER), set(ROUTER_ORDER)
@@ -329,6 +329,14 @@ def validate(entry: Any) -> list[str]:
     if "first_for" in agent:
         need(_text(agent["first_for"]) and len(agent["first_for"]) <= 200,
              "router.agent.first_for must be text of at most 200 characters, e.g. \"clients, projects and decisions\"")
+    if "writes" in agent:
+        # The tools that change something. The router says "I only read" unless
+        # an agent that is on names one here (router/app/about.py).
+        writes = agent["writes"]
+        need(_strings(writes) and all(t in (agent.get("tools") or []) for t in writes),
+             "router.agent.writes must list tools that are also in router.agent.tools")
+        need((parse_version(entry.get("needs_router")) or (0, 0, 0)) >= (0, 7, 0),
+             "an agent with router.agent.writes needs router 0.7.0 or later (needs_router)")
     need(agent.get("name") == agent_id, "router.agent.name must equal id")
     need(agent.get("source") == source, "router.agent.source must equal router.source")
     need(_text(agent.get("description")), "router.agent.description is required")

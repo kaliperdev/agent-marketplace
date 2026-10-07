@@ -521,3 +521,18 @@ def test_a_sign_in_entry_is_written_out_in_order():
     signin = ordered(_own_google())["connection"]["signin"]
     assert list(signin) == ["client", "client_id_field", "client_secret_field", "authorization_url", "token_url",
                             "scopes", "authorize_params"]
+
+
+def test_an_agent_may_name_the_tools_that_change_something():
+    def writes(value, needs="0.7.0"):
+        def mutate(e):
+            e["needs_router"] = needs
+            e["router"]["agent"]["writes"] = value
+        return _mcp_broken(mutate)
+
+    first = _mcp("jira")["router"]["agent"]["tools"][0]
+    assert writes([first]) == []
+    assert any("writes" in m for m in writes([])), "an empty list says nothing"
+    assert any("writes" in m for m in writes(["not_a_tool"]))
+    assert any("writes" in m for m in writes("create_issue"))
+    assert any("0.7.0" in m for m in writes([first], needs="0.6.0"))

@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "id": "notion",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.notion.com/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Notion",
+    "summary": "Searches and reads the Notion pages, databases and comments that the signed-in account can see.",
+    "categories": [
+      "Documents"
+    ],
+    "logo": {
+      "letter": "N",
+      "color": "#191919"
+    },
+    "examples": [
+      "Find the onboarding page in Notion and summarise it",
+      "What is on the roadmap database for this quarter?",
+      "What do the comments on the launch plan say?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Notion",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "notion",
+    "source_config": {},
+    "agent": {
+      "name": "notion",
+      "source": "notion",
+      "tools": [
+        "notion-search",
+        "notion-fetch",
+        "notion-query-data-sources",
+        "notion-get-comments",
+        "notion-get-users",
+        "notion-get-teams"
+      ],
+      "description": "Searches and reads the Notion workspace the signed-in account can see: wikis, specs, plans, project and meeting notes, databases such as task lists, trackers and roadmaps, and the comments on pages. A question naming a document without saying which system holds it may be here or in another document store: a filename does not say which, so ask every store.",
+      "owns": "You own the Notion workspace this server is signed in to: its pages, databases and comments, as far as that account can see. You only read; you cannot create or change anything in Notion. You do not own the source repository or the other document stores.\n\nSearch first with short, specific keywords, then fetch what you found. For a database, fetch it to learn its columns, then query it. Every page and database has a URL: when you report what a page says, GIVE THAT URL with it so the reader can open it.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "notion-search": "Search the Notion workspace by keywords: page titles, project names or distinctive words. Start with {\"query\": \"...\"} using short, specific keywords and leave out the optional filters unless needed. Returns pages and databases with the URLs or IDs to pass to notion-fetch. To find a person, set query_type to \"user\".",
+      "notion-fetch": "Read one Notion page, database, data source or saved database view by its URL or ID (from notion-search). Pages come back as Markdown with their path and last-edited time; check `truncated` before relying on the content. A database lists its data sources as collection:// URLs: fetch that URL for its columns before calling notion-query-data-sources. Set include_discussions to true to see where a page has comments.",
+      "notion-query-data-sources": "Read rows from a Notion database. First fetch the data source with notion-fetch to get its collection:// URL and its <sqlite-table> definition. The default mode is read-only SQLite: use only the table and column names that definition shows, and bind values with ? placeholders and params. mode \"view\" runs one saved view's filters and sorts; mode \"rows\" keeps links and formatting.",
+      "notion-get-comments": "Read the comments and discussions on a Notion page, by its page ID. Page-level discussions by default; set include_all_blocks to true for comments on parts of the page, and include_resolved to true for resolved ones.",
+      "notion-get-users": "List the people in the Notion workspace (members and guests, with names and, where available, emails), or find one with {\"query\": \"name or email\"}. Use it to say who someone is.",
+      "notion-get-teams": "List the workspace's teamspaces, with their names and members' roles, or find one with {\"query\": \"name\"}."
+    }
+  }
+}

@@ -31,3 +31,32 @@ create index if not exists agent_versions_latest
 -- against "1.0.00" republishing 1.0.0 under a different spelling.
 create unique index if not exists agent_versions_one_per_number
   on agent_versions (agent_id, major, minor, patch);
+
+-- A published version never changes: client servers have already copied it.
+-- Edited in a database client (it happened twice, in TablePlus), it would
+-- silently differ from those copies. Publish a new version instead.
+create or replace function agent_versions_unchanging() returns trigger language plpgsql as $$
+begin
+  raise exception 'published versions cannot be edited: publish a new version instead (catalog import)';
+end
+$$;
+drop trigger if exists agent_versions_no_edits on agent_versions;
+create trigger agent_versions_no_edits before update or delete on agent_versions
+  for each row execute function agent_versions_unchanging();
+-- A deleted row would let the same version be published again with other content.
+drop trigger if exists agent_versions_no_truncate on agent_versions;
+create trigger agent_versions_no_truncate before truncate on agent_versions
+  for each statement execute function agent_versions_unchanging();
+
+-- Every attempt to publish, including the ones the catalog refused or ignored:
+-- agent_versions only ever holds what was accepted.
+create table if not exists publish_attempts (
+  id       bigint generated always as identity primary key,
+  agent_id text not null,
+  version  text not null,
+  -- published | unchanged | refused (failed a check) | older (a newer version exists)
+  outcome  text not null check (outcome in ('published', 'unchanged', 'refused', 'older')),
+  reason   text,
+  by       text not null,
+  at       timestamptz not null default now()
+);

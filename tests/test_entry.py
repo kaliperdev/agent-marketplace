@@ -75,7 +75,7 @@ def test_a_passthrough_agent_needs_an_answerer(entries):
 
 
 def test_an_unknown_kind_is_refused(entries):
-    errors = _broken(entries, "jira", lambda e: e.__setitem__("kind", "mcp"))
+    errors = _broken(entries, "jira", lambda e: e.__setitem__("kind", "plugin"))
     assert any("kind" in m for m in errors)
 
 
@@ -216,3 +216,323 @@ def test_a_format_check_the_page_cannot_run_is_refused(entries):
     # not understand Python's named groups.
     errors = _broken(entries, "jira", lambda e: e["connection"]["fields"][0].__setitem__("pattern", r"^(?P<site>[a-z]+)\.atlassian\.net$"))
     assert any("JIRA_DOMAIN" in m and "pattern" in m for m in errors)
+
+
+AGENTS_DIR = Path(__file__).resolve().parent.parent / "agents"
+
+
+def _mcp(agent_id="jira"):
+    return json.loads((AGENTS_DIR / agent_id / "catalog-2.0.0.json").read_text(encoding="utf-8"))
+
+
+def _mcp_broken(mutate, agent_id="jira"):
+    entry = _mcp(agent_id)
+    mutate(entry)
+    return validate(entry)
+
+
+@pytest.mark.parametrize("agent_id", ["jira", "github", "slack", "cliq", "workdrive", "gdocs"])
+def test_the_mcp_entries_are_valid(agent_id):
+    assert validate(_mcp(agent_id)) == []
+
+
+def test_an_mcp_agent_needs_a_service():
+    assert any("needs a service" in m for m in _mcp_broken(lambda e: e.pop("service")))
+
+
+def test_an_mcp_agent_names_no_router_code():
+    errors = _mcp_broken(lambda e: e["router"]["source_config"].update({"tools_factory": "app.agents:jira_tools"}))
+    assert any("must be empty" in m for m in errors)
+
+
+def test_an_mcp_agent_is_driven_by_the_router_not_passed_through():
+    errors = _mcp_broken(lambda e: e["router"]["agent"].update({"passthrough": True}))
+    assert any("not passthrough" in m for m in errors)
+
+
+# ── what an entry may now say about itself (router 0.4.0) ────────────────────
+
+import base64
+
+
+@pytest.mark.parametrize("key,good,bad", [
+    ("memory_mb", 512, 32),
+    ("start_seconds", 90, 1),
+])
+def test_an_mcp_agent_may_ask_for_its_own_memory_and_start_time(key, good, bad):
+    assert _mcp_broken(lambda e: e["service"].update({key: good})) == []
+    assert any(f"service.{key}" in m for m in _mcp_broken(lambda e: e["service"].update({key: bad})))
+    assert any(f"service.{key}" in m for m in _mcp_broken(lambda e: e["service"].update({key: True})))
+
+
+def test_an_agent_may_set_its_own_time_limit_within_what_the_bot_waits():
+    assert _mcp_broken(lambda e: e["router"]["agent"].update({"time_limit_seconds": 300})) == []
+    for bad in (10, 301, "300"):
+        errors = _mcp_broken(lambda e: e["router"]["agent"].update({"time_limit_seconds": bad}))
+        assert any("time_limit_seconds" in m for m in errors), bad
+
+
+def test_an_agent_may_say_it_holds_documents_and_what_to_ask_it_first():
+    ok = _mcp_broken(lambda e: e["router"]["agent"].update(
+        {"holds_documents": True, "first_for": "meetings and what was said in them"}))
+    assert ok == []
+    assert any("holds_documents" in m for m in _mcp_broken(
+        lambda e: e["router"]["agent"].update({"holds_documents": "yes"})))
+    for bad in ("", "x" * 201, 7):
+        assert any("first_for" in m for m in _mcp_broken(
+            lambda e: e["router"]["agent"].update({"first_for": bad}))), bad
+
+
+def test_a_key_file_field_may_say_which_files_it_takes():
+    def with_accept(accept, field_type="file"):
+        def mutate(e):
+            e["connection"]["fields"][0].update({"type": field_type, "accept": accept})
+        return _mcp_broken(mutate)
+
+    assert with_accept(".json,.pem,application/json") == []
+    assert any("accept" in m for m in with_accept("json; rm -rf"))
+    assert any("accept" in m for m in with_accept(".json", field_type="text"))
+
+
+def _svg_logo(size=200):
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect/></svg>' + b" " * size
+    return "data:image/svg+xml;base64," + base64.b64encode(svg).decode()
+
+
+def test_a_logo_may_travel_in_the_entry():
+    assert _mcp_broken(lambda e: e["display"]["logo"].update({"image": _svg_logo()})) == []
+    assert _mcp_broken(lambda e: e["display"]["logo"].update({"image": "logos/jira.svg"})) == []
+    too_big = _svg_logo(size=64 * 1024)
+    for bad in (too_big, "data:image/svg+xml;base64,not*base64", "data:text/html;base64,PGI+", "https://x.example/a.svg"):
+        assert any("display.logo.image" in m for m in _mcp_broken(
+            lambda e: e["display"]["logo"].update({"image": bad}))), bad[:40]
+
+
+@pytest.mark.parametrize("path", sorted(AGENTS_DIR.glob("*/catalog-*.json")), ids=lambda p: f"{p.parent.name}/{p.name}")
+def test_every_entry_in_the_agents_folder_is_valid(path):
+    entry = json.loads(path.read_text(encoding="utf-8"))
+    assert validate(entry) == []
+    assert path.name == f"catalog-{entry['version']}.json" and path.parent.name == entry["id"]
+
+
+# ── an MCP server the vendor runs (router 0.5.0) ─────────────────────────────
+
+from marketplace.entry import safe_tool_name
+
+
+def _linear():
+    return {
+        "format": 1, "id": "linear", "version": "1.0.0", "kind": "mcp",
+        "service": {"url": "https://mcp.linear.app/mcp/readonly", "timeout_seconds": 60},
+        "needs_router": "0.5.0", "publisher": "Kaliper",
+        "display": {"name": "Linear", "summary": "Reads Linear issues and projects.", "categories": ["Engineering"],
+                    "logo": {"letter": "L", "color": "#5E6AD2"}, "examples": ["What is open in the Mobile project?"]},
+        "connection": {"method": "form", "send": {"bearer": "LINEAR_API_KEY"}, "fields": [
+            {"key": "LINEAR_API_KEY", "label": "API key", "type": "password", "required": True}]},
+        "router": {"source": "linear", "source_config": {},
+                   "agent": {"name": "linear", "source": "linear", "tools": ["list_issues", "get_issue"],
+                             "description": "Reads Linear: issues and their status.", "owns": "You own Linear issues."},
+                   "tool_descriptions": {"list_issues": "List issues.", "get_issue": "Read one issue."}},
+    }
+
+
+def _linear_broken(mutate):
+    entry = _linear()
+    mutate(entry)
+    return validate(entry)
+
+
+def test_an_mcp_server_the_vendor_runs_is_valid():
+    assert validate(_linear()) == []
+
+
+@pytest.mark.parametrize("url", [
+    "http://mcp.linear.app/mcp", "https://user:pw@mcp.linear.app/mcp", "https://mcp.linear.app/mcp#x",
+    "https://localhost/mcp", "mcp.linear.app/mcp", "https://" + "a" * 600 + ".com/mcp",
+])
+def test_the_vendors_address_must_be_a_plain_https_address(url):
+    assert any("service.url" in m for m in _linear_broken(lambda e: e["service"].update({"url": url})))
+
+
+def test_a_service_is_either_on_the_clients_server_or_the_vendors():
+    errors = _linear_broken(lambda e: e["service"].update({"image": "kaliper/agent-linear:1.0.0", "port": 8080}))
+    assert any("not both" in m for m in errors)
+    for key, value in (("memory_mb", 256), ("start_seconds", 30)):
+        assert any(f"service.{key}" in m for m in _linear_broken(lambda e: e["service"].update({key: value}))), key
+
+
+def test_a_vendors_server_may_cap_how_much_text_a_tool_returns():
+    assert _linear_broken(lambda e: e["service"].update({"max_result_chars": 40000})) == []
+    for bad in (10, 500000):
+        assert any("max_result_chars" in m for m in _linear_broken(
+            lambda e: e["service"].update({"max_result_chars": bad}))), bad
+    assert any("max_result_chars" in m for m in _mcp_broken(lambda e: e["service"].update({"max_result_chars": 40000})))
+
+
+def test_a_vendors_server_needs_router_0_5_0():
+    assert any("0.5.0" in m for m in _linear_broken(lambda e: e.update({"needs_router": "0.4.0"})))
+
+
+def test_how_the_key_is_sent_must_be_said_and_must_name_a_secret_field():
+    assert any("connection.send" in m for m in _linear_broken(lambda e: e["connection"].pop("send")))
+    assert any("connection.send" in m for m in _linear_broken(
+        lambda e: e["connection"].update({"send": {"bearer": "NOT_A_FIELD"}})))
+    assert any("connection.send" in m for m in _linear_broken(
+        lambda e: e["connection"]["fields"][0].update({"type": "text"})))
+    assert _linear_broken(lambda e: e["connection"].update(
+        {"send": {"header": "X-Api-Key", "field": "LINEAR_API_KEY"}})) == []
+    for header in ("Mcp-Session-Id", "Host", "bad header"):
+        assert any("connection.send" in m for m in _linear_broken(
+            lambda e: e["connection"].update({"send": {"header": header, "field": "LINEAR_API_KEY"}}))), header
+    # Only a vendor's server is sent a key this way.
+    assert any("connection.send" in m for m in _mcp_broken(
+        lambda e: e["connection"].update({"send": {"bearer": e["connection"]["fields"][0]["key"]}})))
+
+
+def test_a_vendors_tool_names_are_its_own():
+    names = ["notion-search", "searchJiraIssuesUsingJql", "fireflies_get_transcript", "a.b", "github/search_code",
+             "slack:read"]
+    def mutate(e):
+        e["router"]["agent"]["tools"] = names
+        e["router"]["tool_descriptions"] = {n: "d" for n in names}
+    assert _linear_broken(mutate) == []
+
+
+@pytest.mark.parametrize("names,why", [
+    (["a.b", "a_b"], "the same"),
+    (["current_time"], "current_time"),
+    (["has space"], "not a valid tool name (letters, digits, _ - . : and /, up to 128)"),
+])
+def test_a_vendors_tool_names_must_stay_distinct_when_made_safe(names, why):
+    def mutate(e):
+        e["router"]["agent"]["tools"] = names
+        e["router"]["tool_descriptions"] = {n: "d" for n in names}
+    assert any(why in m for m in _linear_broken(mutate)), names
+
+
+def test_a_safe_tool_name_is_what_every_model_accepts():
+    # Anthropic allows ^[a-zA-Z0-9_-]{1,128}$, OpenAI ^[a-zA-Z0-9_-]{1,64}$: the overlap.
+    assert safe_tool_name("notion-search") == "notion-search"
+    assert safe_tool_name("jira.search/issues") == "jira_search_issues"
+    assert len(safe_tool_name("x" * 100)) == 64
+
+
+def test_signing_in_to_a_vendors_server_is_not_offered_before_router_0_6_0():
+    errors = _linear_broken(lambda e: e["connection"].update({"method": "signin", "provider": "Linear"}))
+    assert any("0.6.0" in m for m in errors)
+
+
+def test_a_key_may_be_sent_as_basic_from_two_fields():
+    # Atlassian's API tokens: Authorization: Basic base64(email:token).
+    def basic(e, pair=("ATLASSIAN_EMAIL", "LINEAR_API_KEY")):
+        e["connection"]["fields"].insert(0, {"key": "ATLASSIAN_EMAIL", "label": "Email", "type": "email",
+                                             "required": True})
+        e["connection"]["send"] = {"basic": list(pair) if isinstance(pair, tuple) else pair}
+    assert _linear_broken(basic) == []
+    for bad in (("LINEAR_API_KEY", "LINEAR_API_KEY"), ("ATLASSIAN_EMAIL",), "ATLASSIAN_EMAIL", ({"x": 1}, "LINEAR_API_KEY")):
+        assert any("connection.send" in m for m in _linear_broken(lambda e, bad=bad: basic(e, bad))), bad
+
+
+# ── "Sign in with…" (router 0.6.0) ──────────────────────────────────────────
+
+
+def _notion():
+    entry = _linear()
+    entry.update({"id": "notion", "needs_router": "0.6.0"})
+    entry["service"] = {"url": "https://mcp.notion.com/mcp"}
+    entry["display"]["name"] = "Notion"
+    entry["connection"] = {"method": "signin", "provider": "Notion", "signin": {"client": "automatic"}, "fields": []}
+    entry["router"]["source"] = "notion"
+    entry["router"]["agent"].update({"name": "notion", "source": "notion", "tools": ["notion-search"]})
+    entry["router"]["tool_descriptions"] = {"notion-search": "Search Notion."}
+    return entry
+
+
+def _asana():
+    entry = _notion()
+    entry["service"] = {"url": "https://mcp.asana.com/v2/mcp"}
+    entry["connection"] = {"method": "signin", "provider": "Asana", "signin": {
+        "client": "own-app", "client_id_field": "ASANA_CLIENT_ID", "client_secret_field": "ASANA_CLIENT_SECRET"},
+        "fields": [{"key": "ASANA_CLIENT_ID", "label": "App client ID", "type": "text", "required": True},
+                   {"key": "ASANA_CLIENT_SECRET", "label": "App client secret", "type": "password", "required": True}]}
+    return entry
+
+
+def _own_google():
+    entry = _asana()
+    entry["service"] = {"image": "kaliper/agent-gdrive:1.0.0", "port": 8080}
+    entry["router"]["agent"]["tools"] = ["search_files"]
+    entry["router"]["tool_descriptions"] = {"search_files": "Search Drive."}
+    entry["connection"]["provider"] = "Google"
+    entry["connection"]["signin"].update({
+        "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "scopes": ["https://www.googleapis.com/auth/drive.readonly"],
+        "authorize_params": {"access_type": "offline", "prompt": "consent"}})
+    return entry
+
+
+@pytest.mark.parametrize("make", [_notion, _asana, _own_google], ids=["automatic", "own-app", "our-own-agent"])
+def test_the_three_shapes_of_sign_in_are_valid(make):
+    assert validate(make()) == []
+
+
+def _broken_signin(make, mutate):
+    entry = make()
+    mutate(entry["connection"]["signin"], entry)
+    return validate(entry)
+
+
+@pytest.mark.parametrize("make,mutate,why", [
+    (_own_google, lambda s, e: s.update({"client": "automatic", "client_id_field": None}), "automatic"),
+    (_notion, lambda s, e: s.update({"client": "magic"}), "client"),
+    (_asana, lambda s, e: s.pop("client_id_field"), "client_id_field"),
+    (_asana, lambda s, e: s.update({"client_id_field": "ASANA_CLIENT_SECRET"}), "client_id_field"),
+    (_asana, lambda s, e: s.update({"client_secret_field": "ASANA_CLIENT_ID"}), "client_secret_field"),
+    (_own_google, lambda s, e: s.pop("token_url"), "token_url"),
+    (_own_google, lambda s, e: s.update({"token_url": "http://oauth2.googleapis.com/token"}), "token_url"),
+    (_own_google, lambda s, e: s.update({"authorize_params": {"state": "x"}}), "authorize_params"),
+    (_own_google, lambda s, e: s.update({"authorize_params": {f"k{i}": "v" for i in range(9)}}), "authorize_params"),
+    (_own_google, lambda s, e: s.update({"authorize_params": {"prompt": 1}}), "authorize_params"),
+    (_own_google, lambda s, e: s.update({"scopes": ["read", ""]}), "scopes"),
+    (_notion, lambda s, e: s.update({"resource": "yes"}), "resource"),
+    (_notion, lambda s, e: s.update({"extra": 1}), "unknown key"),
+    (_notion, lambda s, e: e["connection"].update({"covers": ["NOTION_TOKEN"]}), "covers"),
+    (_notion, lambda s, e: e.update({"needs_router": "0.5.0"}), "0.6.0"),
+    (_notion, lambda s, e: e["connection"].update({"method": "form"}), "connection.signin"),
+    (_notion, lambda s, e: e["connection"].update({"send": {"bearer": "X"}}), "connection.send"),
+])
+def test_a_sign_in_that_cannot_work_is_refused(make, mutate, why):
+    assert any(why in m for m in _broken_signin(make, mutate)), why
+
+
+@pytest.mark.parametrize("kind", ["remote", "builtin"])
+def test_only_an_mcp_agent_can_sign_in(kind):
+    # The router hands a sign-in's token only to an MCP agent's tool calls: an
+    # agent of any other kind would sign in and never be given its token.
+    entry = _own_google()
+    entry["kind"] = kind
+    assert any("kind mcp" in m for m in validate(entry))
+
+
+def test_a_sign_in_entry_is_written_out_in_order():
+    from marketplace.entry import ordered
+
+    signin = ordered(_own_google())["connection"]["signin"]
+    assert list(signin) == ["client", "client_id_field", "client_secret_field", "authorization_url", "token_url",
+                            "scopes", "authorize_params"]
+
+
+def test_an_agent_may_name_the_tools_that_change_something():
+    def writes(value, needs="0.7.0"):
+        def mutate(e):
+            e["needs_router"] = needs
+            e["router"]["agent"]["writes"] = value
+        return _mcp_broken(mutate)
+
+    first = _mcp("jira")["router"]["agent"]["tools"][0]
+    assert writes([first]) == []
+    assert any("writes" in m for m in writes([])), "an empty list says nothing"
+    assert any("writes" in m for m in writes(["not_a_tool"]))
+    assert any("writes" in m for m in writes("create_issue"))
+    assert any("0.7.0" in m for m in writes([first], needs="0.6.0"))

@@ -1,0 +1,76 @@
+{
+  "format": 1,
+  "id": "slack",
+  "version": "2.0.0",
+  "kind": "mcp",
+  "service": {
+    "image": "kaliper/agent-slack:2.0.0",
+    "port": 8080,
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.3.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Slack",
+    "summary": "Searches and reads conversations in the channels the bot has been invited to.",
+    "categories": [
+      "Chat"
+    ],
+    "logo": {
+      "letter": "S",
+      "color": "#4A154B",
+      "image": "logos/slack.svg"
+    },
+    "examples": [
+      "What was decided in #launch about the date?",
+      "Summarise yesterday's thread about the outage",
+      "Which channels can you read?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "SLACK_BOT_TOKEN",
+        "label": "Bot token",
+        "type": "password",
+        "required": true,
+        "placeholder": "xoxb-…",
+        "pattern": "^xoxb-",
+        "patternHelp": "A bot token starts with xoxb-"
+      },
+      {
+        "key": "SLACK_USER_TOKEN",
+        "label": "User token",
+        "type": "password",
+        "required": true,
+        "placeholder": "xoxp-…",
+        "pattern": "^xoxp-",
+        "patternHelp": "A user token starts with xoxp-",
+        "help": "Needed for search, which Slack only allows with a user token."
+      }
+    ]
+  },
+  "router": {
+    "source": "slack",
+    "source_config": {},
+    "agent": {
+      "name": "slack",
+      "source": "slack",
+      "tools": [
+        "search_slack",
+        "read_slack_thread",
+        "read_slack_channel",
+        "list_slack_channels"
+      ],
+      "description": "Searches and reads Slack conversations in the channels the bot has been invited to: what was discussed, who said it, and the threads where a decision was actually settled.",
+      "owns": "You own the Slack conversations. Search first, then open the thread a hit belongs to -- a parent message rarely carries the conclusion. You do NOT own Zoho Cliq -- that is a different chat tool with different channels, and a Slack answer must never be presented as a Cliq one. You also do not own the source repository, the shared Google Docs, the design notes, or Jira.\n\nEvery search result carries a PERMALINK column. When you report what a message said, GIVE THAT PERMALINK with it. A reader who cannot open the message you used cannot check it, and a quotation with no way back to its source reads the same whether it is accurate or not."
+    },
+    "tool_descriptions": {
+      "search_slack": "Find Slack messages matching a word or phrase, across every channel you can see. This is the fastest way to locate a discussion. Each hit reports the channel and a thread timestamp to pass to read_slack_thread.",
+      "read_slack_thread": "Read a whole thread: its parent message and every reply, in order. Pass the channel id and the thread timestamp shown by search_slack or read_slack_channel. Threads are where decisions get argued out.",
+      "read_slack_channel": "Read the most recent messages in one channel by its id. Messages that have replies are marked with the thread timestamp needed to open them, so follow up with read_slack_thread rather than assuming the parent says everything.",
+      "list_slack_channels": "List the channels this bot has been invited to -- the only channels it can read. Returns 'name<tab>id' lines with topics."
+    }
+  }
+}

@@ -118,3 +118,29 @@ def test_reseeding_after_a_version_bump_skips_that_agent_and_finishes(catalog_en
     assert code == 0
     assert out.count(": unchanged") == 7
     assert "jira 1.0.0: skipped, the catalog already has 1.0.1" in out
+
+
+def trail(conn):
+    return conn.execute("select agent_id, version, outcome, by from publish_attempts order by id").fetchall()
+
+
+def test_the_cli_leaves_a_durable_trail_of_every_import_attempt(catalog_env, capsys, tmp_path):
+    seed(capsys)
+    assert [r[2] for r in trail(catalog_env)] == ["published"] * 8
+    _, out, _ = run(capsys, "export", "jira")
+    entry = json.loads(out)
+    entry["display"]["summary"] = "Reads Jira tickets."
+    edited = tmp_path / "jira.json"
+    edited.write_text(json.dumps(entry), encoding="utf-8")
+    assert run(capsys, "import", str(edited), "--by", "ann")[0] == 2
+    entry["version"] = "1.0.1"
+    edited.write_text(json.dumps(entry), encoding="utf-8")
+    assert run(capsys, "import", str(edited), "--by", "ann")[0] == 0
+    entry["version"] = "1.0.0"
+    edited.write_text(json.dumps(entry), encoding="utf-8")
+    assert run(capsys, "import", str(edited), "--by", "ann")[0] == 2
+    assert trail(catalog_env)[8:] == [
+        ("jira", "1.0.0", "refused", "ann"),
+        ("jira", "1.0.1", "published", "ann"),
+        ("jira", "1.0.0", "older", "ann"),
+    ]

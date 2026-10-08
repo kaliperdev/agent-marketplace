@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "id": "gdocs",
+  "version": "2.0.1",
+  "kind": "mcp",
+  "service": {
+    "image": "kaliper/agent-gdocs:2.0.0",
+    "port": 8080,
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.4.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Google Docs",
+    "summary": "Searches and reads the Google Docs shared with your service account, at any folder depth.",
+    "categories": [
+      "Documents"
+    ],
+    "logo": {
+      "letter": "D",
+      "color": "#4285F4",
+      "image": "logos/googledocs.svg"
+    },
+    "examples": [
+      "Find the onboarding spec and summarise it",
+      "Which docs mention the pricing change?",
+      "What do the latest meeting notes say about next steps?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "GOOGLE_SA_JSON",
+        "label": "Service account key",
+        "type": "file",
+        "required": true,
+        "help": "The JSON key file of a Google service account. Share the folders you want read with that account's email address."
+      }
+    ]
+  },
+  "router": {
+    "source": "gdocs",
+    "source_config": {},
+    "agent": {
+      "name": "gdocs",
+      "source": "gdocs",
+      "tools": [
+        "browse_drive",
+        "search_docs",
+        "read_google_doc"
+      ],
+      "description": "Searches and reads the Google Docs shared with the service account, at any folder depth: specs, plans, proposals, meeting notes and prose documentation that is not in the repository. A question naming a document without saying which system holds it may be here or in another document store: a filename does not say which, so ask every store.",
+      "owns": "You own the shared Google Docs. Search first -- it reaches every document you can see, however deeply nested -- and browse only to orient yourself. You do not own the source repository.\n\nEvery document and folder in a listing carries a link. When you report what a document says, GIVE THAT LINK with it: a Drive id is something you pass to read_google_doc, not something a reader can open.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "browse_drive": "List what is in Drive. Call with no folder_id to see what is shared with you, then call it again with a folder's id to see inside that folder. Documents nested in subfolders are only visible by descending into them, so prefer search_docs when you know what you are looking for.",
+      "search_docs": "Find Google Docs whose title or body contains a word or phrase. This searches every document you can reach, however deeply nested, so it is the fastest way to locate material. Returns ids to pass to read_google_doc.",
+      "read_google_doc": "Read one Google Doc's full text by the id shown by search_docs or browse_drive."
+    }
+  }
+}

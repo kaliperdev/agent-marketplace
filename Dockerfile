@@ -8,4 +8,5 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY marketplace ./marketplace
 RUN uv sync --frozen --no-dev
 EXPOSE 8095
-CMD ["uv", "run", "--frozen", "--no-dev", "python", "-m", "marketplace.service", "--host", "0.0.0.0", "--port", "8095"]
+# The environment was built above; running it directly skips the launcher.
+CMD ["/app/.venv/bin/python", "-m", "marketplace.service", "--host", "0.0.0.0", "--port", "8095"]

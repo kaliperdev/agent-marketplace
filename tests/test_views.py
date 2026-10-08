@@ -6,7 +6,7 @@ import pytest
 from marketplace.views import page_view, router_registry
 
 PAGE_KEYS = {
-    "id", "name", "publisher", "version", "summary", "categories", "logo",
+    "id", "name", "publisher", "version", "needsRouter", "summary", "categories", "logo",
     "kind", "routerDescription", "capabilities", "credentials", "connection", "examples",
 }
 
@@ -48,3 +48,26 @@ def test_the_router_file_holds_only_builtin_agents(entries):
     remote = _json.loads((_Path(__file__).resolve().parent.parent / "agents" / "textql" / "catalog-2.0.0.json").read_text(encoding="utf-8"))
     builtin = [e for e in entries if e["id"] != "textql"]
     assert _router_registry(builtin + [remote]) == _router_registry(builtin)
+
+
+def test_the_page_view_says_which_router_an_agent_needs(entries):
+    from marketplace.views import page_view as _page_view
+
+    assert _page_view(entries[0])["needsRouter"] == entries[0]["needs_router"]
+
+
+def test_any_setting_placeholder_reads_as_plain_words_on_the_page(entries):
+    # The router fills {space_key} from what a server saved; the catalog has no
+    # server, so the page says what it stands for instead of showing braces.
+    entry = copy.deepcopy(entries[0])
+    entry["router"]["agent"]["description"] = "Reads {space_key}, beside {github_repo}."
+    assert page_view(entry)["routerDescription"] == "Reads the configured space key, beside the configured repository."
+
+
+def test_an_agent_the_vendor_runs_says_where_it_runs(entries):
+    entry = copy.deepcopy(next(e for e in entries if e["id"] == "jira"))
+    entry["service"] = {"url": "https://mcp.linear.app/mcp/readonly"}
+    view = page_view(entry)
+    assert view["runsAt"] == "mcp.linear.app"
+    # An agent on the client's server says nothing of the sort.
+    assert "runsAt" not in page_view(next(e for e in entries if e["id"] == "jira"))

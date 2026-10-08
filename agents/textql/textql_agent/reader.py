@@ -14,6 +14,8 @@ from dataclasses import dataclass
 
 import httpx
 
+from textql_agent.log import log, redact
+
 TEXTQL_TIMEOUT_SECONDS = 300.0
 CHART_DOWNLOAD_TIMEOUT_SECONDS = 30.0
 MAX_CHART_HTML_BYTES = 2_000_000
@@ -107,10 +109,10 @@ class TextQLReader:
             response.raise_for_status()
             chat = response.json()
         except (httpx.HTTPError, ValueError) as error:
-            print(f"[textql] charts skipped: could not read chat {chat_id}: {error}", flush=True)
+            log("WARN", "textql", "chart skipped", reason="could not read chat", chat=chat_id, error=redact(error))
             return ()
         if not isinstance(chat, dict):
-            print(f"[textql] charts skipped: chat {chat_id} is not an object", flush=True)
+            log("WARN", "textql", "chart skipped", reason="chat is not an object", chat=chat_id)
             return ()
         assets = [
             asset
@@ -130,14 +132,14 @@ class TextQLReader:
                 page = self.client.get(url, timeout=CHART_DOWNLOAD_TIMEOUT_SECONDS)
                 page.raise_for_status()
             except httpx.HTTPError as error:
-                print(f"[textql] chart {name} skipped: {error}", flush=True)
+                log("WARN", "textql", "chart skipped", chart=name, reason="download failed", error=redact(error))
                 continue
             if len(page.content) > MAX_CHART_HTML_BYTES:
-                print(f"[textql] chart {name} skipped: {len(page.content)} bytes", flush=True)
+                log("WARN", "textql", "chart skipped", chart=name, reason="too large", bytes=len(page.content))
                 continue
             option = chart_option(page.text)
             if option is None:
-                print(f"[textql] chart {name} skipped: no chart settings found", flush=True)
+                log("WARN", "textql", "chart skipped", chart=name, reason="no chart settings found")
                 continue
             found.append({"title": chart_title(option, name), "option": option})
         return tuple(found)

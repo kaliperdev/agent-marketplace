@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "id": "github",
+  "version": "2.0.0",
+  "kind": "mcp",
+  "service": {
+    "image": "kaliper/agent-github:2.0.0",
+    "port": 8080,
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.3.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "GitHub",
+    "summary": "Reads one repository: its files, code search, and its issues and pull requests.",
+    "categories": [
+      "Code",
+      "Issues"
+    ],
+    "logo": {
+      "letter": "G",
+      "color": "#181717",
+      "image": "logos/github.svg"
+    },
+    "examples": [
+      "What does config/agents.json say about the textql agent?",
+      "Which open issues mention the scheduler?",
+      "Where is the Cliq read budget defined?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "GITHUB_REPO",
+        "label": "Repository",
+        "type": "text",
+        "required": true,
+        "placeholder": "owner/name",
+        "default": "kaliperdev/langgraph-prototype",
+        "pattern": "^[\\w.-]+/[\\w.-]+$",
+        "patternHelp": "Use owner/name, e.g. kaliperdev/langgraph-prototype",
+        "help": "The one repository this agent reads."
+      },
+      {
+        "key": "GITHUB_TOKEN",
+        "label": "Access token",
+        "type": "password",
+        "required": false,
+        "placeholder": "ghp_…",
+        "help": "Needed for private repositories and for higher rate limits."
+      }
+    ]
+  },
+  "router": {
+    "source": "github",
+    "source_config": {},
+    "agent": {
+      "name": "github",
+      "source": "github",
+      "tools": [
+        "list_repo_files",
+        "read_repo_file",
+        "search_repo_code",
+        "list_repo_issues"
+      ],
+      "description": "Reads ONE specific repository, {github_repo}: its file tree, file contents, code search, and issue and pull-request history. It cannot read any other repository, so a question about a different repo is not for this agent.",
+      "owns": "You own exactly ONE GitHub repository: {github_repo} -- its code, configuration and its issue and pull-request history. You CANNOT read any other repository and you cannot follow a GitHub URL: your tools take no repository argument, so whatever repo a question names, you will read {github_repo} and nothing else. If a question is about a different repository, say plainly that you can only read {github_repo}. NEVER present what you read as if it were a different repository -- that is the failure this rule exists to prevent. Structure lives in configuration as well as in code -- config/agents.json defines which agents exist and what tools each holds, so read it before saying the repository does not describe itself. You DO own the design notes in corpus/ -- the canonical record of why this system is built the way it is, what was measured and what was rejected. The knowledge agent no longer reads them; it answers from captured business knowledge instead, so if you do not answer from corpus/ nobody will. You also do not own the shared Google Docs.\n\nEvery file and issue you list carries a GitHub URL, and a file's is pinned to the commit you read. When you report what a file or issue contains, GIVE THAT URL with it, so a reader opens the same revision you did."
+    },
+    "tool_descriptions": {
+      "list_repo_files": "List every file path in {github_repo}. Call this first to orient yourself. This is the only repository you can read.",
+      "read_repo_file": "Read one file from {github_repo} by its exact path, as listed by list_repo_files.",
+      "search_repo_code": "Find files in {github_repo} containing a keyword. Prefer read_repo_file when you already know the path: this search is rate-limited to 10 calls per minute.",
+      "list_repo_issues": "List recent issues and pull requests in {github_repo}, with their titles and bodies."
+    }
+  }
+}

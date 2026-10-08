@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "id": "jira",
+  "version": "1.0.0",
+  "kind": "builtin",
+  "needs_router": "0.1.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Jira",
+    "summary": "Searches and reads Jira issues across every project the account can see, including status, assignee and comments.",
+    "categories": [
+      "Tickets",
+      "Projects"
+    ],
+    "logo": {
+      "letter": "J",
+      "color": "#0052CC",
+      "image": "logos/jira.svg"
+    },
+    "examples": [
+      "What's the status of the checkout bug?",
+      "Which issues were assigned to me this week?",
+      "List the open issues in the DATA project"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "JIRA_DOMAIN",
+        "label": "Jira site",
+        "type": "text",
+        "required": true,
+        "placeholder": "yourcompany.atlassian.net",
+        "pattern": "^[A-Za-z0-9-]+\\.atlassian\\.net$",
+        "patternHelp": "Just the site name, e.g. yourcompany.atlassian.net (no https://)"
+      },
+      {
+        "key": "JIRA_EMAIL",
+        "label": "Account email",
+        "type": "email",
+        "required": true,
+        "placeholder": "you@yourcompany.com",
+        "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+        "patternHelp": "An email address, e.g. you@yourcompany.com"
+      },
+      {
+        "key": "JIRA_API_TOKEN",
+        "label": "API token",
+        "type": "password",
+        "required": true,
+        "help": "Create one at id.atlassian.com, under Security, API tokens."
+      }
+    ]
+  },
+  "router": {
+    "source": "jira",
+    "source_config": {
+      "tools_factory": "app.agents:jira_tools",
+      "answerer_factory": null,
+      "requires_credentials": [
+        "JIRA_DOMAIN",
+        "JIRA_EMAIL",
+        "JIRA_API_TOKEN"
+      ]
+    },
+    "agent": {
+      "name": "jira",
+      "source": "jira",
+      "tools": [
+        "search_jira_issues",
+        "read_jira_issue",
+        "list_jira_projects"
+      ],
+      "description": "Searches and reads Jira issues across every project the account can see: what was requested, its status and assignee, and the comment thread where the decision was argued out.",
+      "owns": "You own the Jira issues: tickets, their status and their comment threads. You do not own the source repository, the shared Google Docs, or the design notes.\n\nEvery issue in a search result carries its BROWSE URL. When you report what a ticket says, GIVE THAT URL with it: an issue key alone is not a link, and a reader has to know the Jira domain to open one."
+    },
+    "tool_descriptions": {
+      "search_jira_issues": "Find Jira issues. `query` searches the text of the ticket. `project` narrows to one project key, e.g. RUUBY. `status` filters by workflow status. THERE IS NO \"OPEN\" STATUS HERE: a search with no `status` returns every status including Done, so a question about OPEN tickets needs `status` set to the names that are not Done, comma-separated. Pass any name; one this Jira does not have comes back as the list of names it does, so a wrong guess costs one call rather than a wrong answer. Never leave `status` empty and then describe the result as the open ones. `assignee` is who HOLDS a ticket and `reporter` is who CREATED it -- different questions, so use the one that was asked; both take a person's name and are matched against Jira's own user list. `updated_since` bounds when a ticket last MOVED and `created_since` when it was MADE -- again different, and 'created last week' means created_since. Both take a date (2026-01-01) or a window (-7d); without either, only the last 30 days of updates are searched. Use these filters rather than putting words like \"open\", \"closed\" or a person's name into `query`: `query` searches ticket TEXT, so those match almost nothing. Returns issue keys for read_jira_issue.",
+      "read_jira_issue": "Read one Jira issue by its key, e.g. RUUBY-12: its fields, its description, and its comments. The comments usually carry the decision.",
+      "list_jira_projects": "List the Jira projects this account can see, as 'key<tab>name' lines. Use a key to narrow search_jira_issues."
+    }
+  }
+}

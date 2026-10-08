@@ -166,3 +166,13 @@ def test_a_chat_in_an_unexpected_shape_loses_the_charts_not_the_answer(chat):
     answer = make_reader(serving(chat)).ask_detailed("q")
     assert answer.text == OK["response"]
     assert answer.charts == ()
+
+
+def test_a_skipped_chart_is_logged_without_its_signed_link(capsys):
+    pages = {ASSET_URL: httpx.Response(403, text="signature expired")}
+    make_reader(serving(chat_with(chart_asset()), pages)).ask_detailed("q")
+    captured = capsys.readouterr()
+    (line,) = [l for l in (captured.out + captured.err).splitlines() if "chart skipped" in l]
+    assert " WARN [textql] chart skipped " in line
+    assert "403" in line
+    assert "signature=s" not in line and "iat=1" not in line and "?[redacted]" in line

@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "id": "textql",
+  "version": "1.0.0",
+  "kind": "builtin",
+  "needs_router": "0.1.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "TextQL",
+    "summary": "Answers questions about the numbers in your connected databases through TextQL's analyst, Ana, including charts.",
+    "categories": [
+      "Data",
+      "Databases"
+    ],
+    "logo": {
+      "letter": "T",
+      "color": "#ffffff",
+      "image": "logos/textql.png"
+    },
+    "examples": [
+      "Which 5 start stations had the most trips?",
+      "Chart the number of trips per month",
+      "What was total revenue last quarter?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "TEXTQL_API_KEY",
+        "label": "API key",
+        "type": "password",
+        "required": true,
+        "help": "A service account key from TextQL, under Settings, API Keys & Access."
+      },
+      {
+        "key": "TEXTQL_CONNECTOR_IDS",
+        "label": "Data connections",
+        "type": "text",
+        "required": true,
+        "placeholder": "70, 630",
+        "pattern": "^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$",
+        "patternHelp": "Connection numbers from TextQL, separated by commas",
+        "help": "Without at least one, Ana has no data to query."
+      }
+    ]
+  },
+  "router": {
+    "source": "textql",
+    "source_config": {
+      "tools_factory": "app.tools.textql:textql_tools",
+      "answerer_factory": "app.tools.textql:textql_answerer",
+      "requires_credential": "TEXTQL_API_KEY"
+    },
+    "agent": {
+      "name": "textql",
+      "source": "textql",
+      "tools": [
+        "ask_textql"
+      ],
+      "description": "Answers questions about the numbers in the connected databases and data warehouses, through TextQL's analyst agent Ana: counts, totals, trends and breakdowns that need a query run over tables. It does not read chat, tickets, documents or code.",
+      "owns": "You own the connected databases and data warehouses, reached through TextQL's analyst agent Ana. Pass the user's question through as asked: Ana plans and runs her own queries and returns a written answer. One call is usually enough. You do NOT own Slack, Zoho Cliq, Jira, the Google Docs, WorkDrive, the captured knowledge base or the source repository -- a question about what someone said, decided or wrote belongs to those agents, not to a database.",
+      "passthrough": true,
+      "verbatim": true
+    },
+    "tool_descriptions": {
+      "ask_textql": "Ask TextQL's analyst agent Ana a question about the connected databases. Pass the user's question as asked -- this is not a keyword search: Ana plans and runs her own queries and returns a written answer. One call is usually enough."
+    }
+  }
+}

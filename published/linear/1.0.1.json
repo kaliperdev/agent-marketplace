@@ -1,0 +1,131 @@
+{
+  "format": 1,
+  "id": "linear",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.linear.app/mcp/readonly",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.5.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Linear",
+    "summary": "Searches and reads Linear issues, projects, cycles, and their status for the API key.",
+    "categories": [
+      "Tickets",
+      "Projects"
+    ],
+    "logo": {
+      "letter": "L",
+      "color": "#5E6AD2",
+      "image": "data:image/png;base64,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"
+    },
+    "examples": [
+      "What is open in the Mobile project?",
+      "Who is assigned the checkout bug, and what is its status?",
+      "What did the last cycle finish for the platform team?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "send": {
+      "bearer": "LINEAR_API_KEY"
+    },
+    "fields": [
+      {
+        "key": "LINEAR_API_KEY",
+        "label": "API key",
+        "type": "password",
+        "required": true,
+        "help": "From Linear: Settings, then Account, then Security & Access. Create an API key with only the Read permission. Sent as Authorization: Bearer."
+      }
+    ]
+  },
+  "router": {
+    "source": "linear",
+    "source_config": {},
+    "agent": {
+      "name": "linear",
+      "source": "linear",
+      "tools": [
+        "list_teams",
+        "get_team",
+        "get_workspace",
+        "list_users",
+        "get_user",
+        "list_issue_statuses",
+        "get_issue_status",
+        "list_issue_labels",
+        "list_issues",
+        "get_issue",
+        "list_comments",
+        "get_attachment",
+        "list_projects",
+        "get_project",
+        "list_project_labels",
+        "list_milestones",
+        "get_milestone",
+        "list_cycles",
+        "list_documents",
+        "get_document",
+        "get_status_updates",
+        "list_releases",
+        "get_release",
+        "list_release_notes",
+        "get_release_note",
+        "list_release_pipelines",
+        "list_custom_views",
+        "list_templates",
+        "get_template",
+        "get_notifications",
+        "get_triage_responsibility",
+        "list_agent_skills",
+        "get_agent_skill",
+        "extract_images",
+        "search_documentation"
+      ],
+      "description": "Searches and reads the Linear workspace this API key can see: issues and their status, comments, projects, milestones, cycles, documents, and releases. A question about a ticket, who owns it, what cycle it is in, or how a project is tracking belongs here.",
+      "owns": "You own the Linear workspace this API key can see: issues, projects, cycles, milestones, documents, releases, and comments. You only read; you cannot create or change anything in Linear.\n\nFind issues with list_issues, then read one with get_issue. Resolve a team with list_teams before list_cycles or list_issue_statuses. When you report an issue, give its identifier (for example LIN-123) and its URL if the tool returned one.\n\nYou do not own Jira, GitHub, or the other document stores.",
+      "holds_documents": false,
+      "first_for": "Linear issues, projects, cycles, and their status"
+    },
+    "tool_descriptions": {
+      "list_teams": "List teams in the user's Linear workspace, including their parent IDs and hierarchy names",
+      "get_team": "Retrieve details of a specific Linear team, including its parent ID and hierarchy name. Use list_teams with parentTeam or ancestorTeam to find its sub-teams",
+      "get_workspace": "Retrieve the connected workspace's ID, name, and URL to confirm which workspace you are using",
+      "list_users": "List workspace users with their IDs, names, emails, and admin, guest, and active flags. Use get_user for team memberships.",
+      "get_user": "Retrieve one user's profile, email, admin, guest, and active flags, plus team IDs, names, and keys. Use list_users to find matching users.",
+      "list_issue_statuses": "List available issue statuses in a Linear team",
+      "get_issue_status": "Retrieve detailed information about an issue status in Linear by name or ID",
+      "list_issue_labels": "List available issue labels in a Linear workspace or team. A retired label carries `retiredAt` and cannot be applied to new issues.",
+      "list_issues": "List issues in the user's Linear workspace, including active Triage Intelligence suggestions for issues in triage. For issues assigned to me, use \"me\" as the assignee. For issues created by me, use \"me\" as the creator. Use \"null\" for no assignee.",
+      "get_issue": "Retrieve detailed information about an issue by ID, including attachments, git branch name, and active Triage Intelligence suggestions when the issue is in triage. A nonempty fields selection overrides the include options; request optional fields directly in fields.",
+      "list_comments": "List comments on a Linear issue, project, initiative, document, project milestone, or project/initiative status update. Provide exactly one of `issueId`, `projectId`, `initiativeId`, `documentId`, `milestoneId`, or `statusUpdateId`. For issues, projects, and initiatives this returns both top-level discussion threads and inline description comments. Inline (anchored) comments carry a non-null `quotedText` set to the snippet of description text they reference. Returned comments include `author` and nullable `onBehalfOf`; when set, `onBehalfOf` identifies the user the agent author acted for. Files uploaded in comment bodies are returned in `attachments` with titles and download URLs, not issue attachment IDs. Signed upload URLs expire after five minutes; call list_comments again to refresh them. Download documents using these URLs and process them with your own file tools.",
+      "get_attachment": "Retrieve an issue attachment by ID. Use format=url to get its title and download URL without fetching the file content. Linear upload URLs are signed for five minutes; call again to refresh. External URLs are returned unchanged. Files embedded in comments have no issue attachment ID; use the URLs in list_comments attachments instead. Download and process documents with your own file tools.",
+      "list_projects": "List projects in the user's Linear workspace",
+      "get_project": "Retrieve details of a specific project in Linear",
+      "list_project_labels": "List available project labels in a Linear workspace or team. Returns workspace labels by default; pass `team` to also include that team's labels. A team-scoped label carries a `team` field; different teams can hold same-named labels, so check it before acting on an ID. A retired label carries `retiredAt` and cannot be applied to new projects.",
+      "list_milestones": "List all milestones in a Linear project",
+      "get_milestone": "Retrieve details of a specific milestone by ID or name",
+      "list_cycles": "List a team's cycles with their IDs, numbers, dates, and issue and scope histories",
+      "list_documents": "List documents in the user's Linear workspace",
+      "get_document": "Retrieve a Linear document by ID or slug",
+      "get_status_updates": "List or get project/initiative status updates with their body, health, author, and parent project or initiative. Pass id to get one update and ignore list filters; omit id to list.",
+      "list_releases": "List releases in the workspace, with optional filtering by pipeline, stage, version, and text.",
+      "get_release": "Retrieve details of a release by ID or slug.",
+      "list_release_notes": "List release notes in the workspace, optionally filtered by pipeline or covered release.",
+      "get_release_note": "Retrieve release notes by ID or slug, including markdown content.",
+      "list_release_pipelines": "List release pipelines in the workspace.",
+      "list_custom_views": "Find saved issue, project, and initiative views accessible to the user, including personal, workspace, and team views. Excludes archived views and views scoped to a project or initiative. Returns view metadata, not the records matching its filters.",
+      "list_templates": "List the Linear issue, project, and document templates available to the authenticated user. Use this to find the template a team expects, then call get_template for its content.",
+      "get_template": "Retrieve a Linear template by ID or name: the content it pre-fills, the ids it applies, its sub-issues, and its form fields. Pass the template to save_issue or save_project to apply it. References come back as ids, so read a name with the matching tool when you need one. A form template collects its answers through a form, so applying one here creates an issue with the form unanswered.",
+      "get_notifications": "Get a page of notifications from the authenticated user's Linear inbox.",
+      "get_triage_responsibility": "Retrieve who is responsible for a team's triage: the person on triage now, what happens when an issue enters triage, and the upcoming shifts of the team's triage rotation. Pass `user` to get only that person's shifts, for example to find when their next triage duty starts, even when it is weeks away.",
+      "list_agent_skills": "List Linear Agent skills available to the authenticated user.",
+      "get_agent_skill": "Retrieve a Linear Agent skill by ID, including its full markdown instructions.",
+      "extract_images": "Extract and fetch images from markdown content. Use this to view screenshots, diagrams, or other images embedded in Linear issues, comments, or documents. Pass the markdown content (e.g., issue description) and receive the images as viewable data.",
+      "search_documentation": "Search Linear's product documentation for feature and usage guidance. Returns up to five results with titles, URLs, and content snippets per page."
+    }
+  }
+}

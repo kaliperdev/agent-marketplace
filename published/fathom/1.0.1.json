@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "id": "fathom",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.fathom.ai/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Fathom",
+    "summary": "Searches and reads Fathom meeting summaries and transcripts for the signed-in account.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "F",
+      "color": "#000000",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAY1BMVEUAAAAAvv8AcpkAwP8Awv8Ad6AAxP8As/AAruoAZYgAKzoAx/8AOUwAbpQAotkAaIsAga0AIy8AHigAksQAEhgARVwATGYAqOIAQFYAMUIAfKYAFx4Ajb0ACw8AWXcAUGwAmc4uVqnEAAADFElEQVR4nO2a7ZKqMAyGpSltwfKliwir6P1f5Sl69mzLAmWmBvfM5PnnOJp3krdNgu52BEEQBEEQBEEQBPFfcE3r26n9fFv80z3igvMmObwl/LWUHCIDj/LiDfE/7uIR3gAgZFJtLaD7Cv/UEOXZtvHP0hFgCgFNv2UWYh6NAa6S7U7EOAFfhUi2ErCfiL+pHacFPLMQbyFAzAkwWYAmSdEF5D9N6NixwL4diyUBQyEaZDumzdQxsCUIWaDaMQGPAmOGvMNUEEc+BY+rCdGOmRJrJCDasS0j7pdg7PiBJqG6KK8CZDvqeL+iEIB5O6adXFEIVDvqUq6xY5PhNWtdrsmCsSOehN9gx26NHaOcoSkwdlTe+9l4QRavs2PVZ4m2Xq+zI7zKjqe7NN8nc7uu7So7guqvweEPF85NxmGYAzNLwuGoVkgQx+A6HL/DjG463Ql/IcQxMP7FmQqHA9Z+v1nF0mtHfgmqwo/NyNx0sWUt7e2UIM8hArqJzQiUbUft6xE8qEFNb0auHatlO4IMETCzmIzWEl0u2VEgCHhmwTphh3L+dhQhLpwV8LSjNYTpbs6OQRlY3oxA2uPHTLMGFSIg8Zwxrmw7ppcJO/Kgvtg2y7vZMH64duQjCSD17LevoffuJcPtaO0ElWtHiEKXR7Zf0fXudsuxewTsw+fkvvG2HOC50/QGO5oWCsPTzeD4jznQ23j5qOm15V0pde9etCzpEnwth99Gn/ls2/aFu1q1cNNNpuD16I4veQEalI3oenLmwAUvgApq+7PE2c064+28HUHWOAIYK052y5mbgNAywBiL2Wn+pvsnIMdZxgYBbMiCPQeyifED6xT8FcBYVltZSOOxFyAKazl+AaMspKXz6AoA60mdJYCxpLbs2FrTMMAF6wGVI2CwoxXoaw40czreLu4KMBKcUuukEXvRJEj19wsYCF9/AwUgQwJ+n4DW/5mXkowFbP0jvh4J6DeOvzu4Kcjwf6cbc3YKsHkCDPU7C/BAF8+jELMa+dqd40P3RZb19Xv+QkIQBEEQBEEQBEEQyPwBcLIklxf7y+4AAAAASUVORK5CYII="
+    },
+    "examples": [
+      "What did we decide on the Acme call?",
+      "List my Fathom meetings this week.",
+      "Who was on the roadmap review?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Fathom",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "fathom",
+    "source_config": {},
+    "agent": {
+      "name": "fathom",
+      "source": "fathom",
+      "tools": [
+        "get_identity",
+        "list_teams",
+        "list_meetings",
+        "search_meetings",
+        "get_meeting_summary",
+        "get_meeting_transcript",
+        "find_person"
+      ],
+      "description": "Searches and reads recorded Fathom meetings the signed-in account can see: summaries, action items, and transcripts. A question about what was said in a Fathom meeting belongs here.",
+      "owns": "You own recorded Fathom meetings this account can see. You only read.\n\nList or search meetings, then get_meeting_summary. Open get_meeting_transcript only when the summary is not enough.\n\nYou do not own Fireflies, Granola, or Otter.",
+      "holds_documents": false,
+      "first_for": "Fathom meeting summaries and transcripts"
+    },
+    "tool_descriptions": {
+      "get_identity": "Read the signed-in Fathom account.",
+      "list_teams": "List the Fathom teams this account can see.",
+      "list_meetings": "List recorded meetings this account can see. Then read one with get_meeting_summary.",
+      "search_meetings": "Search recorded meetings. Then read one with get_meeting_summary.",
+      "get_meeting_summary": "Read one meeting's summary and action items. Use this before the transcript.",
+      "get_meeting_transcript": "Read one meeting's transcript. Open this when the summary is not enough.",
+      "find_person": "Find a person in the meetings this account can see."
+    }
+  }
+}

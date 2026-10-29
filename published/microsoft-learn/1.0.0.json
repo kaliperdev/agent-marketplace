@@ -1,0 +1,56 @@
+{
+  "format": 1,
+  "id": "microsoft-learn",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://learn.microsoft.com/api/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.5.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Microsoft Learn",
+    "summary": "Searches and reads current Microsoft product documentation and official code samples.",
+    "categories": [
+      "Documents",
+      "Developer Tools"
+    ],
+    "logo": {
+      "letter": "M",
+      "color": "#ffffff",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0YyNTAyMiIgZD0iTTEgMWgxMHYxMEgxeiIvPjxwYXRoIGZpbGw9IiM3RkJBMDAiIGQ9Ik0xMyAxaDEwdjEwSDEzeiIvPjxwYXRoIGZpbGw9IiMwMEE0RUYiIGQ9Ik0xIDEzaDEwdjEwSDF6Ii8+PHBhdGggZmlsbD0iI0ZGQjkwMCIgZD0iTTEzIDEzaDEwdjEwSDEzeiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "How do I configure managed identity for Azure Functions?",
+      "Find the .NET example for an Azure Service Bus consumer",
+      "Read the Microsoft documentation for Entra workload identities"
+    ]
+  },
+  "connection": {
+    "method": "builtin",
+    "fields": []
+  },
+  "router": {
+    "source": "microsoft-learn",
+    "source_config": {},
+    "agent": {
+      "name": "microsoft-learn",
+      "source": "microsoft-learn",
+      "tools": [
+        "microsoft_docs_search",
+        "microsoft_docs_fetch",
+        "microsoft_code_sample_search"
+      ],
+      "description": "Searches Microsoft's public technical documentation and official code samples, then fetches complete documentation pages.",
+      "owns": "You own public Microsoft Learn documentation and official Microsoft code samples. Search first, then fetch the most relevant page before answering. Cite the returned Microsoft Learn URLs. You do not own a user's Microsoft 365 files, Azure resources, or private data.",
+      "holds_documents": false,
+      "first_for": "Microsoft product documentation, Azure guidance, and official Microsoft code samples"
+    },
+    "tool_descriptions": {
+      "microsoft_docs_search": "Search Microsoft Learn documentation and return relevant passages and URLs.",
+      "microsoft_docs_fetch": "Fetch the complete content of a Microsoft Learn documentation page by URL.",
+      "microsoft_code_sample_search": "Search official Microsoft documentation code samples."
+    }
+  }
+}

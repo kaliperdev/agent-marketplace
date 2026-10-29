@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "id": "neon",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.neon.tech/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Neon",
+    "summary": "Reads and manages Neon Postgres projects and branches for the signed-in account.",
+    "categories": [
+      "Database"
+    ],
+    "logo": {
+      "letter": "N",
+      "color": "#00E599",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+TmVvbjwvdGl0bGU+PHBhdGggZD0iTTI0IDBWMjRsLTkuMzY1LTguMDQ1VjI0SDBWMFpNMi45NDIgMjEuMDg3aDguNzUxVjkuNTYzbDkuMzY1IDguMjA0VjIuOTE5TDIuOTQyIDIuOTE0WiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "List my Neon projects.",
+      "Create a development branch for this project.",
+      "Which Neon project should I use for this database?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Neon",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "neon",
+    "source_config": {},
+    "agent": {
+      "name": "neon",
+      "source": "neon",
+      "tools": [
+        "list_projects",
+        "create_branch"
+      ],
+      "description": "Reads Neon projects and creates database branches in the signed-in account.",
+      "owns": "You own Neon Postgres projects and their branches for this account. List projects before acting when the project is unclear. Creating a branch changes Neon and requires confirmation. You do not own databases hosted outside Neon.",
+      "holds_documents": false,
+      "first_for": "Neon Postgres projects and database branches",
+      "writes": [
+        "create_branch"
+      ]
+    },
+    "tool_descriptions": {
+      "list_projects": "List Neon projects available to the signed-in account.",
+      "create_branch": "Create a database branch in a Neon project. This changes Neon."
+    }
+  }
+}

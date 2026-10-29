@@ -1,0 +1,85 @@
+{
+  "format": 1,
+  "id": "grain",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.grain.com/_/mcp",
+    "timeout_seconds": 120,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Grain",
+    "summary": "Searches and reads Grain meetings, transcripts, notes, coaching, and deals.",
+    "categories": [
+      "Meetings",
+      "Analytics"
+    ],
+    "logo": {
+      "letter": "G",
+      "color": "#111111",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJHcmFpbiI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMxMTEiLz48cGF0aCBmaWxsPSIjQzdGRjY2IiBkPSJNMzIgMTBjNCA3IDQgMTMgMCAxOC00LTUtNC0xMSAwLTE4em0wIDQ0Yy00LTctNC0xMyAwLTE4IDQgNSA0IDExIDAgMTh6TTEwIDMyYzctNCAxMy00IDE4IDAtNSA0LTExIDQtMTggMHptNDQgMGMtNyA0LTEzIDQtMTggMCA1LTQgMTEtNCAxOCAwek0xNyAxN2M4IDIgMTIgNiAxMSAxMy03IDEtMTEtMy0xMS0xM3ptMzAgMzBjLTgtMi0xMi02LTExLTEzIDctMSAxMSAzIDExIDEzem0wLTMwYzAgMTAtNCAxNC0xMSAxMy0xLTcgMy0xMSAxMS0xM3pNMTcgNDdjMC0xMCA0LTE0IDExLTEzIDEgNy0zIDExLTExIDEzeiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "What did customers say about pricing this month?",
+      "Show my action items from last week.",
+      "Summarize the Acme meeting transcript."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Grain",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "grain",
+    "source_config": {},
+    "agent": {
+      "name": "grain",
+      "source": "grain",
+      "tools": [
+        "myself",
+        "list_meetings",
+        "list_attended_meetings",
+        "fetch_meeting",
+        "fetch_meeting_transcript",
+        "fetch_meeting_notes",
+        "search_meetings",
+        "search_companies",
+        "search_persons",
+        "list_workspace_users",
+        "list_coaching_feedback",
+        "fetch_meeting_coaching_feedback",
+        "list_open_deals",
+        "list_all_deals",
+        "fetch_deal"
+      ],
+      "description": "Searches and reads Grain meeting data available to the signed-in user: meetings, transcripts, AI notes, participants, companies, coaching feedback, and connected HubSpot deals.",
+      "owns": "You own recorded meetings in Grain that this user attended or can access. You only read. Coaching and deal tools require a Business or Enterprise plan, and deal tools require the HubSpot integration.",
+      "holds_documents": false,
+      "first_for": "Grain meetings, transcripts, and AI notes"
+    },
+    "tool_descriptions": {
+      "myself": "Get the signed-in user's Grain account information.",
+      "list_meetings": "List accessible meetings with company, person, date, participant, and title filters.",
+      "list_attended_meetings": "List meetings attended by the signed-in user with filtering and pagination.",
+      "fetch_meeting": "Get detailed information about a meeting by its UUID.",
+      "fetch_meeting_transcript": "Read a meeting transcript, optionally including timestamps.",
+      "fetch_meeting_notes": "Read AI-generated notes for a meeting.",
+      "search_meetings": "Semantically search meeting transcripts with meeting and speaker filters.",
+      "search_companies": "Find companies that participated in meetings for use in meeting filters.",
+      "search_persons": "Find meeting participants by name or email for use in meeting filters.",
+      "list_workspace_users": "List users in the Grain workspace.",
+      "list_coaching_feedback": "List AI-generated sales coaching insights; requires a Business or Enterprise plan.",
+      "fetch_meeting_coaching_feedback": "Read the coaching scorecard for a meeting; requires a Business or Enterprise plan.",
+      "list_open_deals": "List open HubSpot-connected deals and their Grain intelligence; requires a Business or Enterprise plan.",
+      "list_all_deals": "List all HubSpot-connected deals and their Grain intelligence; requires a Business or Enterprise plan.",
+      "fetch_deal": "Read detailed Grain intelligence for a HubSpot-connected deal; requires a Business or Enterprise plan."
+    }
+  }
+}

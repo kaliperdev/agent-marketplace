@@ -1,0 +1,90 @@
+{
+  "format": 1,
+  "id": "trello",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.trello.com/v1",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Trello",
+    "summary": "Searches, reads, and updates Trello boards, lists, cards, and checklists for the signed-in workspace.",
+    "categories": [
+      "Tickets",
+      "Projects"
+    ],
+    "logo": {
+      "letter": "T",
+      "color": "#0079BF",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAJ1BMVEVHcEwVWLwVWLwVWLwUWLwVWLz///8ARLYBWr4ATbm2yOjs8/uCotjZ73qpAAAABXRSTlMAlNlaLu6TxuwAAAHXSURBVHic7ZvbcsMgDETDzRg7//+9NckwjWPA2AVtH3Zfo0HHQnSmoH08SjJKae06SGulTDFNXlZ1Sb3DULY5vemdPEk1pVej0rchDPv6pJNu6L71R2nk579VLMLQ3f9UoRPE8hcIBLb/V5lGEPz+qEMNhPMfCIT6/1P7syCf3zlYAyZp6AZEGegGRMFOQJICFyCVANQBUQZcgHcJLBLAIlswSqH+CCVpcAvEJgCegSiDbYHYBHAAaA/GLoQDYPNvx6D+c/BZhb/GtgKEZZ0yWpfMqldiWwFCdsnXsodV51LseoxtBQhLKf80fX/XldhmAF8swCb/FVsJXX1+/XOAyqLTvI+da7EEIAABCEAAAhCAAAQgAAEIQAACEEACoHaXUL0i6QUQnuXQpwSA88U7mmr+fgDOuyUrd/+W7BrAtg1ZVdP3BbglAhCAAAQgAAEIQAAC/G+ACw+XQwBuP8f2AqiUoP4g3Q1g+3fn1pN8P4CbQwkdAcYLP8QCB4APMsEBwMNsFj/Ohx9ohI90woda4WO9+MFm+Gg3frgdPt6PNzjALR54kwve5gM3OuGtXnizG97uhzc84i2fMo1QM71KFOHcBA42Pr+qMGoj2i3wYPN7ghCx//8AZ7g9n3c0cEYAAAAASUVORK5CYII="
+    },
+    "examples": [
+      "What cards are due this week?",
+      "Add a card to the In Progress list.",
+      "What is on the launch board?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Trello",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "trello",
+    "source_config": {},
+    "agent": {
+      "name": "trello",
+      "source": "trello",
+      "tools": [
+        "trelloReadMember",
+        "trelloReadBoard",
+        "trelloReadList",
+        "trelloReadCard",
+        "trelloReadChecklist",
+        "trelloReadInbox",
+        "trelloReadPlanner",
+        "trelloSearch",
+        "trelloWriteBoard",
+        "trelloWriteList",
+        "trelloWriteCard",
+        "trelloWriteChecklist",
+        "trelloWriteInbox",
+        "trelloWritePlanner"
+      ],
+      "description": "Searches and updates the one Trello workspace this sign-in authorised: boards, lists, cards, checklists, Inbox, and planner events. A question about a Trello card or board belongs here.",
+      "owns": "You own the one Trello workspace chosen at sign-in: its boards, lists, cards, checklists, Inbox, and planner. You can search, read, create, and update. You cannot archive a card, list, or Inbox card, and Trello has no permanent delete.\n\nCall trelloReadMember get_me before a relative date. Get an ARI from a read tool before any write. Ids are ARIs, not Trello URLs, except trelloReadBoard get and trelloReadCard get.\n\nYou do not own Jira, Linear, ClickUp, or monday.com.",
+      "holds_documents": false,
+      "first_for": "Trello boards, lists, and cards",
+      "writes": [
+        "trelloWriteBoard",
+        "trelloWriteList",
+        "trelloWriteCard",
+        "trelloWriteChecklist",
+        "trelloWriteInbox",
+        "trelloWritePlanner"
+      ]
+    },
+    "tool_descriptions": {
+      "trelloReadMember": "Read the signed-in member, including prefs.timezone. Call action get_me before any relative due date.",
+      "trelloReadBoard": "Read boards and their labels. action get accepts a board URL or an ARI. list and list_by_workspace page with a cursor.",
+      "trelloReadList": "Read lists. action list_by_board pages every list on a board. Pass the board ARI from trelloReadBoard.",
+      "trelloReadCard": "Read cards. action get accepts a card URL or an ARI. list_by_list pages a list's cards. list_comments reads comments when that action is offered.",
+      "trelloReadChecklist": "Read a card's checklists and items. action list_by_card returns the full set, which a card preview may truncate.",
+      "trelloReadInbox": "Read Inbox cards. Inbox is not a board, so do not use trelloReadBoard for it.",
+      "trelloReadPlanner": "Read planner calendars and events. action get returns primaryCalendar.timezone for event times.",
+      "trelloSearch": "Search cards and boards by keyword. Resolve prefs.timezone with trelloReadMember before a due: qualifier.",
+      "trelloWriteBoard": "Create a board. Do not archive.",
+      "trelloWriteList": "Create or move a list. Set pos to 1, 2, 3 when order matters. Do not archive.",
+      "trelloWriteCard": "Create, update, or move a card, mark it done, and attach or detach a label. due is UTC. Do not pass an archive action. Get the ARI from trelloReadCard first.",
+      "trelloWriteChecklist": "Create or update a checklist and its items. Get the card ARI from trelloReadCard first. Do not archive.",
+      "trelloWriteInbox": "Create or update an Inbox card. create takes no pos. Do not pass an archive action.",
+      "trelloWritePlanner": "Create a focus-time event, or link and unlink a card and an event. Times are UTC. Do not archive."
+    }
+  }
+}

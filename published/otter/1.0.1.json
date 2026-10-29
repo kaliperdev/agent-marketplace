@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "id": "otter",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.otter.ai/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Otter",
+    "summary": "Searches and reads Otter meeting transcripts for the signed-in account.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "O",
+      "color": "#2BB5A0",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAKlBMVEVHcEzr9f////////////////////8Aev8Abv8Adv+NvP8zkP9yrP+31f+uGdyLAAAABnRSTlMA9lGcrKdkak6RAAACDklEQVR4nO3b23KDIBAGYEmj7nJ4/9etWkDEoMQYdjrzc8Vgkv0Ky8HO0HVLefRqaFrU89Gt5dE2eCiR8CMTfxh+hON7gVD//5V5FCTjD4NwB8xd8JQF9F3j+Z8XJZwCUxIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVn3HWjESjsS5/okca9Yv6nQBliZjHqTAT2c3/NQ1NzWR29TsBmpbgoTDp9NnStjSl9TsB4yb8Qhj3D7P6fQDFu/gzIQwD+QbK6vcBXsafBK0A+/7fjkId4GR2HAD0Gn/Kf0qykXU94Gx2lAGKYjy2TilnVwKpWsDp7CgDbAhHNjaFMGxrAbHX3gfEn9zPfB+nDFjH/TQ5iwBH+d8/l9At5I4AybhfB8RQ22ZKxqAE8P20pOp1gPGALH+9i80BIF0VrwNCumU7YBgZPgC8tUAVASEFCoDaoP8YEIYgW0FcYXzvBxSS0NQnIX+WhHEabs5Aqt00jOm+6QJTuRDx5wtR/GoqMJz+3neX4nUzYuNngorxm2xGyXZMRjunTePteHMg4elofvVAEvPhXUDxSDY2OpKVDqXc7FD6+ljODY/lZy8mScv+6T0A8Vezs5fTNcPPsv0yYJB+Pf92AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5K/79bKAXv7Kp/ilV/lrv+IXn+Wvfstffp8Jz9bX/3sf/hdG+obXvx40sgAAAABJRU5ErkJggg=="
+    },
+    "examples": [
+      "Which product meetings did I have last quarter?",
+      "Summarise this Otter conversation.",
+      "What is my Otter account email?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Otter",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "otter",
+    "source_config": {},
+    "agent": {
+      "name": "otter",
+      "source": "otter",
+      "tools": [
+        "get_user_info",
+        "search",
+        "fetch"
+      ],
+      "description": "Searches and reads Otter conversations the signed-in account can see: meeting overviews and full transcripts. A question about what was said in an Otter meeting belongs here.",
+      "owns": "You own Otter conversations this account can see. You only read.\n\nSearch first, then fetch the transcript.\n\nYou do not own Fireflies, Granola, or Fathom.",
+      "holds_documents": false,
+      "first_for": "Otter meeting transcripts"
+    },
+    "tool_descriptions": {
+      "get_user_info": "Read the signed-in user's name and email.",
+      "search": "Search meetings and return an overview. Then fetch the conversation you need.",
+      "fetch": "Read the full transcript of one Otter meeting or conversation. Pass a meeting this search returned, or an otter.ai URL."
+    }
+  }
+}

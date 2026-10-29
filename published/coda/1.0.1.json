@@ -1,0 +1,134 @@
+{
+  "format": 1,
+  "id": "coda",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://coda.io/apis/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Coda",
+    "summary": "Searches, reads, and updates Coda docs, pages, and tables for the signed-in account.",
+    "categories": [
+      "Documents"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#F46A54",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGFBMVEVHcEz0alT0alT0alT0alT0alT0alT0alSLUezRAAAAB3RSTlMAEzHPr4te5MnSJQAAAfFJREFUeJztmw2SgzAIhc0PeP8br9rprlVDnABJd3zvAOETsElecZogCIKuFFx0N3pkyi4ijncentLspkTVNMTsF35VriTBO36NIJB3/HkWqxAd6/9WklLQIQFiCoJ7B6zKZYAeFRBrAAAAAAAAfQCE/RAZeArA8N1wNMDwDAAAAAB4DECaC6t1AEjEHDcx5dOazgApc9xHCJEPFz5XgCX8efnAH+sKl1M1wFX4beH9tdsRgIpHjZ3zkbgYXwtQePwXwW8ZhBbQAUhPti3+6kU3h6YWfxETkZQlHUDdAbwhBYBJfAWAaH31AKg3gC+AcNLuA2CUgGYAow5oB8hG8ZsBrCrQCmBWgX8LIO1vzwCw2QcUAMMzAIDhr+E8HIBGA5g1QfN5YPR2bFaD9iOZUQraD6VGXaC4F9icSRQANkXQXM1qoxHTapbEKJdKdTuubcqBc0opi7XS+QNyI75NEvEWrTQopCr8LS11i9aiScXb/96mEn619C7ZtUv1OZvk6ZJtHuUxxUej0N0pXUe23jFC5NNkVhevOOVMRHl58S4An+KWAwAAAAAAAMoAo2dIMMaDDAzPAAAAAIBvBhg+3t/nAwdHh+KWZDuL/QFEkyj4f2ZT9bKcCep/cIXj4JOlSnNGB4S4Tps4iCs2JQRB0Bj9AGPnARL2giY/AAAAAElFTkSuQmCC"
+    },
+    "examples": [
+      "What is in the roadmap doc?",
+      "Add a row to the tasks table.",
+      "Summarise the comments on the launch page."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Coda",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "coda",
+    "source_config": {},
+    "agent": {
+      "name": "coda",
+      "source": "coda",
+      "tools": [
+        "search",
+        "url_convert",
+        "whoami",
+        "tool_guide",
+        "name_match",
+        "notifications_list",
+        "notifications_mark_read",
+        "allow_locked_page_edits",
+        "document_create",
+        "document_outline",
+        "document_manage",
+        "schema_explain",
+        "page_create",
+        "page_update",
+        "page_describe",
+        "table_create",
+        "table_rows_read",
+        "table_rows_manage",
+        "table_columns_manage",
+        "table_view_manage",
+        "table_columns_read",
+        "content_modify",
+        "content_duplicate",
+        "content_image_upload",
+        "comment_add",
+        "comment_resolve",
+        "content_read",
+        "document_suggest_changes",
+        "formula_execute",
+        "control_manage",
+        "control_read"
+      ],
+      "description": "Searches and updates the Coda docs the signed-in account can see: pages, tables, rows, comments, and formulas. A question naming a doc without saying which system holds it may be here or in another document store. Coda URLs and docs.superhuman.com URLs are both here.",
+      "owns": "You own the Coda docs this account can see, including docs.superhuman.com. You can search, read, create, and update pages, tables, rows, comments, and controls. You cannot delete a doc, page, table, row, column, view, comment, or control.\n\nDecode a URL with url_convert before any other call. Then search or content_read, then create or update.\n\nYou do not own Notion or Confluence.",
+      "holds_documents": true,
+      "first_for": "Coda docs, pages, and tables",
+      "writes": [
+        "notifications_mark_read",
+        "allow_locked_page_edits",
+        "document_create",
+        "document_manage",
+        "page_create",
+        "page_update",
+        "table_create",
+        "table_rows_manage",
+        "table_columns_manage",
+        "table_view_manage",
+        "content_modify",
+        "content_duplicate",
+        "content_image_upload",
+        "comment_add",
+        "comment_resolve",
+        "document_suggest_changes",
+        "control_manage"
+      ]
+    },
+    "tool_descriptions": {
+      "search": "Search for content across documents, pages, tables, rows, folders, and people, or list documents by recency. Returns ranked results with URLs. Supports cursor-based pagination. Then read the page or table this returns.",
+      "url_convert": "Convert between resource URIs (coda:// or superhuman://) and web URLs. Use action \"encode\" for URI to https, or \"decode\" for https to URI (returns {uri, docUri}). On decode, pass scope to pin the depth of the returned URI. Decode a Coda or docs.superhuman.com URL before any other call.",
+      "whoami": "Get the current authenticated user information (ID, name, email) AND the workspaces they belong to. For any other named person, use name_match with {type:\"person\"} instead.",
+      "tool_guide": "Get detailed guidance before working in specific areas. Accepts a single topic, or a batch of topics with optional subTopics for in-depth references (formula functions, reaction icons, personal filter formats, etc.).",
+      "name_match": "Match approximate page, table, view, or person names to candidates in the document. Returns matched URIs / user profiles ranked by similarity. Batch up to 20 lookups per call. For the current user, use whoami instead.",
+      "notifications_list": "List the current user's notifications (mentions), newest first. Defaults to unread.",
+      "notifications_mark_read": "Mark notifications read by the mention timestamps returned by notifications_list. Mark only the notifications the user selected.",
+      "allow_locked_page_edits": "Record that this connection may edit locked pages. Call only after the user agrees. A later write in this connection then bypasses the lock. The lock stays on the page.",
+      "document_create": "Create a new Coda document. Call tool_guide with \"document\" topic first for usage patterns.",
+      "document_outline": "Outline a document: document metadata (title, icon, createdAt, owner, sourceDoc) plus a paginated list of its pages with per-page metadata and child page outlines. The document's structure, not its body content.",
+      "document_manage": "Change a document's access control (add, update, or revoke a permission) or move the document to a different folder. Requires share access; moving also requires edit access.",
+      "schema_explain": "Map a document's tables, columns, views, and the lookups between them. Returns each node's uri, name, and kind.",
+      "page_create": "Create a new page. To copy existing pages or documents, use content_duplicate instead. Call tool_guide with \"page\" topic for options.",
+      "page_update": "Update an existing page. Call tool_guide with \"page\" topic for options.",
+      "page_describe": "Describe page metadata (title, pageType, isHidden, parentPageUri, position, icon, coverPhoto, subtitle, canvasUri, authors, timestamps, child page outlines). Page URIs only — for body content call content_read.",
+      "table_create": "Create a new table on a page with specified columns and optional initial data. Supports various column types, formulas, and positioning. Call tool_guide with \"table\" topic for column types.",
+      "table_rows_read": "Read row data from a table with cell values. Pass table uri directly. When uri points to a view, the response includes baseTable data so the agent can tell it's working with a view rather than the underlying table.",
+      "table_rows_manage": "Add or update table rows. Use action “add” to insert new rows, or “update” to modify existing rows. Supports markdown formatting in cell values (bold, italic, color and highlight; tool_guide gives the syntax). Call tool_guide with “table” topic for usage patterns.",
+      "table_columns_manage": "Add or update table columns (name, type, formula). For action “update”: cannot change cell text formatting — use table_rows_manage with markdown instead. Call tool_guide with “table” topic for column types.",
+      "table_view_manage": "Add a new view to a table (action \"add\") or configure an existing view (action \"configure\"). Supports name, layout (including charts), filters (shared and personal), sorts, groups, column visibility, column order, conditional formatting, and title visibility.",
+      "table_columns_read": "Read a table's column schema: column names, IDs, isWritable flag, format.type, formula bodies, and rowCount. Pass include: ['formats'] for full per-variant format details, or include: ['views'] for view configs.",
+      "content_modify": "Modify canvas content: insert, replace, or delete elements, or make headings and tables collapsible/foldable via set_collapsible. Inline formatting: bold, italic, color and highlight (tool_guide gives the syntax). For tabular data, prefer table_create over Markdown tables. Call tool_guide with “content” topic first for usage patterns.",
+      "content_duplicate": "Duplicate content from one location to another. Can copy pages and documents into both new or existing documents. Call tool_guide with \"content\" topic for usage patterns.",
+      "content_image_upload": "Upload an image to a canvas placeholder, OR (omit blobId) mint a pre-signed S3 upload URL — use the returned imageUrl with table_rows_manage to write into a table image/attachment cell. Two modes: (1) provide imageUrl to upload directly from an https:// URL, or (2) omit imageUrl and provide contentType to get an uploadUrl for local file upload via curl. Base64 data URLs are not supported. Call tool_guide with \"content\" topic for usage patterns.",
+      "comment_add": "Add a comment, reply, or emoji reaction to a page element, table row, comment thread, or specific comment. Call tool_guide with \"comment\" topic for usage patterns.",
+      "comment_resolve": "Mark a comment thread as resolved, or reopen a resolved thread.",
+      "content_read": "Read body content of a page or cell canvas. Accepts a page URI, a page-canvas URI, or a cell-canvas URI (returned as canvasUri by table_rows_read for canvas-typed cells). Call tool_guide with \"page\" topic for content type options.",
+      "document_suggest_changes": "Propose tracked suggestions on line content of a page or a canvas cell. A reviewer accepts or rejects each suggestion. This does not apply a live edit.",
+      "formula_execute": "Evaluate a Coda Formula Language (CFL) expression and return the result. Requires a document URI. Call tool_guide with \"formula\" topic first for usage patterns.",
+      "control_manage": "Create or update a canvas control (formula, button, reaction, checkbox, text box, slider, or date picker). Use action \"create\" to add a new control, or \"update\" to modify an existing one. Formula controls support the full column-format vocabulary (currency, scale, slider, lookup, etc.). Call tool_guide with \"formula\" topic for usage.",
+      "control_read": "Read a canvas control's full configuration by its formula or control URI — any control type, not just formulas and buttons. Returns type, current value, and the control's type-specific configuration (a button's label/actionFormula/color/disableIfFormula, a slider's minimum/maximum, a reaction's imageIcon); formula controls also carry formula/error. Obtain the URI from content_read (include \"controls\" or \"formulas\")."
+    }
+  }
+}

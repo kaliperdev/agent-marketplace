@@ -1,0 +1,93 @@
+{
+  "format": 1,
+  "id": "asana",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.asana.com/v2/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Asana",
+    "summary": "Searches and reads Asana tasks, projects, portfolios, and status information.",
+    "categories": [
+      "Tickets",
+      "Projects"
+    ],
+    "logo": {
+      "letter": "A",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48dGl0bGU+QXNhbmE8L3RpdGxlPjxjaXJjbGUgY3g9IjI0IiBjeT0iMTQiIHI9IjkiIGZpbGw9IiNGMDZBNkEiLz48Y2lyY2xlIGN4PSIxMyIgY3k9IjMzIiByPSI5IiBmaWxsPSIjRjA2QTZBIi8+PGNpcmNsZSBjeD0iMzUiIGN5PSIzMyIgcj0iOSIgZmlsbD0iI0YwNkE2QSIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "What tasks are assigned to me?",
+      "Give me a status overview of the launch project.",
+      "Find the API redesign task."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Asana",
+    "signin": {
+      "client": "own-app",
+      "client_id_field": "ASANA_CLIENT_ID",
+      "client_secret_field": "ASANA_CLIENT_SECRET"
+    },
+    "fields": [
+      {
+        "key": "ASANA_CLIENT_ID",
+        "label": "OAuth client ID",
+        "type": "text",
+        "required": true,
+        "help": "Create an MCP app in the Asana developer console and enter its client ID."
+      },
+      {
+        "key": "ASANA_CLIENT_SECRET",
+        "label": "OAuth client secret",
+        "type": "password",
+        "required": true,
+        "help": "The client secret for the same Asana MCP app."
+      }
+    ]
+  },
+  "router": {
+    "source": "asana",
+    "source_config": {},
+    "agent": {
+      "name": "asana",
+      "source": "asana",
+      "tools": [
+        "search_objects",
+        "get_task",
+        "get_tasks",
+        "get_my_tasks",
+        "search_tasks",
+        "get_project",
+        "get_projects",
+        "get_portfolio",
+        "get_portfolios",
+        "get_items_for_portfolio",
+        "get_status_overview"
+      ],
+      "description": "Searches and reads the Asana work graph this signed-in account can access: tasks, projects, portfolios, goals, teams, users, and status.",
+      "owns": "You own the Asana tasks, projects, and portfolios visible to this account. You only read; do not create or change work. Search objects first when an ID is unknown. You do not own GitLab or other ticket systems.",
+      "holds_documents": false,
+      "first_for": "Asana tasks, projects, portfolios, and status"
+    },
+    "tool_descriptions": {
+      "search_objects": "Search Asana tasks, projects, portfolios, goals, teams, users, tags, custom fields, and AI teammates by name.",
+      "get_task": "Read one task with description, assignee, dates, fields, memberships, dependencies, subtasks, and comments.",
+      "get_tasks": "List tasks using a project, section, tag, user task list, or assignee filter.",
+      "get_my_tasks": "List tasks assigned to the signed-in user, optionally filtered by completion.",
+      "search_tasks": "Search task names, descriptions, and comments with advanced filters; requires an eligible Asana plan.",
+      "get_project": "Read a project's description, owner, members, task counts, and optionally sections.",
+      "get_projects": "List projects in the workspace, optionally by team or archive status.",
+      "get_portfolio": "Read one portfolio and its owner and associated projects.",
+      "get_portfolios": "List portfolios owned by the signed-in user.",
+      "get_items_for_portfolio": "List projects and goals inside a portfolio.",
+      "get_status_overview": "Build an aggregate status overview for matching projects or portfolios, including updates, task summaries, and blockers."
+    }
+  }
+}

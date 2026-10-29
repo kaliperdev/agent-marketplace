@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "id": "mixpanel",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.mixpanel.com/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Mixpanel",
+    "summary": "Queries Mixpanel product analytics and manages dashboards for the signed-in US-region organization.",
+    "categories": [
+      "Analytics"
+    ],
+    "logo": {
+      "letter": "M",
+      "color": "#7856FF",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+TWl4cGFuZWw8L3RpdGxlPjxwYXRoIGQ9Ik02Ljk2NyA5Ljk5NmgzLjA1M2MtLjc2My0uNDc3LTEuMDQ4LTEuMTQ1LTEuNDMxLTIuMzg0TDcuNDQzIDMuMzY2QzYuOTE5IDEuNDU4IDYuNDkuNTUxIDQuMzkuNTUxSC4wMDR2MS4xNDVoLjYyMWMxLjI4NiAwIDEuNDMxLjQ3NyAxLjgxNCAxLjkwOEwzLjQ0IDcuMzI2Yy41MjQgMS44MTQgMS4zMzcgMi42NyAzLjUzIDIuNjdoLS4wMDNabTcuMDYgMGgzLjA1M2MyLjE5NCAwIDIuOTU2LS44NiAzLjQ4NC0yLjY3bDEuMDAxLTMuNzIyYy4zODItMS40MzEuNTctMS45MDggMS44MTQtMS45MDhIMjRWLjU1MWgtNC4zNGMtMi4xNDYgMC0yLjU3Ni44Ni0zLjA1MyAyLjgxNWwtMS4xNDUgNC4yNDZjLS4zODQgMS4yODYtLjY3MyAxLjkwNy0xLjQzNSAyLjM4NFptLTQuMDA3IDQuMDA4aDQuMDA3VjkuOTk2SDEwLjAydjQuMDA4Wk0wIDIzLjQ0OWg0LjM5YzIuMSAwIDIuNTI5LS45MDcgMy4wNTMtMi44MTVsMS4xNDYtNC4yNDZjLjM4My0xLjIzOS42NjgtMS45MDcgMS40MzEtMi4zODRINi45NjdjLTIuMTk0IDAtMy4wMDcuODYtMy41MzEgMi42N2wtMS4wMDEgMy43MjJjLS4zODMgMS40MzEtLjUyNCAxLjkwNy0xLjgxNCAxLjkwN0gwdjEuMTQ2Wm0xOS42NSAwaDQuMzQzdi0xLjE0NmgtLjYyMmMtMS4yMzkgMC0xLjQzMS0uNDc2LTEuODE0LTEuOTA3bC0xLjAwMS0zLjcyMmMtLjUyNC0xLjgxNC0xLjI4Ni0yLjY3LTMuNDgzLTIuNjdoLTMuMDQ2Yy43NjIuNDc3IDEuMDQxIDEuMDk4IDEuNDI0IDIuMzg0bDEuMTQ1IDQuMjQ2Yy40NzcgMS45NTUuOTA3IDIuODE1IDMuMDU0IDIuODE1WiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "Run a signup conversion funnel.",
+      "Which events declined this week?",
+      "Create a dashboard for these reports."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Mixpanel",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "mixpanel",
+    "source_config": {},
+    "agent": {
+      "name": "mixpanel",
+      "source": "mixpanel",
+      "tools": [
+        "Run-Query",
+        "Get-Query-Schema",
+        "Get-Report",
+        "Get-Projects",
+        "Get-Events",
+        "List-Properties",
+        "Search-Entities",
+        "Create-Dashboard",
+        "List-Dashboards",
+        "Get-Dashboard",
+        "Update-Dashboard"
+      ],
+      "description": "Queries Mixpanel events, funnels, flows, retention, reports, and dashboards in the signed-in US-region organization.",
+      "owns": "You own Mixpanel product analytics and dashboards visible to this account. Discover projects and events before querying. Creating or updating a dashboard requires confirmation. This endpoint is for US-region data; it does not own EU or India-region projects.",
+      "holds_documents": false,
+      "first_for": "Mixpanel product analytics, reports, and dashboards",
+      "writes": [
+        "Create-Dashboard",
+        "Update-Dashboard"
+      ]
+    },
+    "tool_descriptions": {
+      "Run-Query": "Run an insights, funnel, flow, or retention query.",
+      "Get-Query-Schema": "Get the JSON schema needed to build an analytics query.",
+      "Get-Report": "Retrieve a saved report, optionally including its results.",
+      "Get-Projects": "List Mixpanel projects and workspaces available to the user.",
+      "Get-Events": "Browse or search events in a project, optionally with full metadata.",
+      "List-Properties": "List or search event and user properties in a project.",
+      "Search-Entities": "Search dashboards, reports, experiments, feature flags, and other Mixpanel entities.",
+      "Create-Dashboard": "Create a dashboard with text cards and reports. This changes Mixpanel.",
+      "List-Dashboards": "List dashboards in a project.",
+      "Get-Dashboard": "Read a dashboard's metadata, text cards, and reports.",
+      "Update-Dashboard": "Change a dashboard's metadata, rows, or layout. This changes Mixpanel."
+    }
+  }
+}

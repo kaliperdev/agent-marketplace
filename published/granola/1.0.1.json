@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "id": "granola",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.granola.ai/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Granola",
+    "summary": "Searches and reads Granola meeting notes, transcripts, and shared screens for the signed-in account.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "G",
+      "color": "#2F6B4F",
+      "image": "data:image/png;base64,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"
+    },
+    "examples": [
+      "What did we decide in yesterday's Acme call?",
+      "What meetings did I have with Sam last week?",
+      "What was on the pricing slide?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Granola",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "granola",
+    "source_config": {},
+    "agent": {
+      "name": "granola",
+      "source": "granola",
+      "tools": [
+        "query_granola_meetings",
+        "list_meeting_folders",
+        "list_meetings",
+        "get_meetings",
+        "get_meeting_attachment",
+        "get_meeting_transcript",
+        "get_account_info"
+      ],
+      "description": "Searches and reads Granola meeting notes in the signed-in account's active workspace: summaries, private notes, transcripts, and shared screens. A question about what was said in a Granola meeting belongs here.",
+      "owns": "You own Granola notes in the active workspace this account can see. You only read. You cannot switch workspace or sign out from here.\n\nList or query meetings, then get_meetings. Open get_meeting_transcript only when the notes are not enough.\n\nYou do not own Fireflies, Otter, or Fathom. You do not own Notion, even when a page is called meeting notes.",
+      "holds_documents": false,
+      "first_for": "Granola meeting notes and transcripts"
+    },
+    "tool_descriptions": {
+      "query_granola_meetings": "Ask Granola about meeting notes in the active workspace. Use this for a question across meetings.",
+      "list_meeting_folders": "List meeting folders this account can open, with id, title, description, and note count. Paid plans only.",
+      "list_meetings": "List meeting notes, with id, title, date, and attendees. Filter by folder on a paid plan. Then get_meetings.",
+      "get_meetings": "Read meeting notes: title, date, attendees, private notes, and the summary. Use this before the transcript.",
+      "get_meeting_attachment": "Read a screenshot shared in a meeting, such as a slide or a chart.",
+      "get_meeting_transcript": "Read a meeting's transcript. Paid plans only. Open this when the notes are not enough.",
+      "get_account_info": "Read the email, active workspace, and joined workspaces for this connection."
+    }
+  }
+}

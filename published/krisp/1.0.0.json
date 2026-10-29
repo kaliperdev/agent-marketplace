@@ -1,0 +1,97 @@
+{
+  "format": 1,
+  "id": "krisp",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.krisp.ai/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Krisp",
+    "summary": "Searches Krisp meetings, transcripts, summaries, action items, folders, and upcoming meetings.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "K",
+      "color": "#6C47FF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiByeD0iMTIiIGZpbGw9IiM2YzQ3ZmYiLz48cGF0aCBkPSJNMTQgMTBoN3YxMWwxMC0xMWg5TDI4IDI0bDEyIDE0aC05TDIxIDI3djExaC03VjEweiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "What did we decide in yesterday's customer call?",
+      "List my pending meeting action items.",
+      "Mark this Krisp action item complete."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Krisp",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "krisp",
+    "source_config": {},
+    "agent": {
+      "name": "krisp",
+      "source": "krisp",
+      "tools": [
+        "search_meetings",
+        "search_meeting_content",
+        "get_multiple_documents",
+        "list_action_items",
+        "complete_action_item",
+        "complete_action_items",
+        "list_folders",
+        "get_folder",
+        "list_tags",
+        "attach_tag",
+        "detach_tag",
+        "bulk_update_speakers",
+        "import_recording",
+        "get_import_status",
+        "list_upcoming_meetings",
+        "list_activities",
+        "get_user_preferences",
+        "date_time"
+      ],
+      "description": "Searches and reads Krisp meetings, transcripts, summaries, action items, folders, tags, and calendar meetings; it can also update meeting metadata and import recordings.",
+      "owns": "You own Krisp meeting information visible to this account. Search first, then fetch full documents only when needed. Completing action items, changing tags or speakers, and importing recordings require confirmation. You do not own meetings stored in other services.",
+      "holds_documents": false,
+      "first_for": "Krisp meeting notes, transcripts, and action items",
+      "writes": [
+        "complete_action_item",
+        "complete_action_items",
+        "attach_tag",
+        "detach_tag",
+        "bulk_update_speakers",
+        "import_recording"
+      ]
+    },
+    "tool_descriptions": {
+      "search_meetings": "Search meetings by text, ID, date, tag, folder, speaker, participant, duration, recurrence, or ownership.",
+      "search_meeting_content": "Search text inside accessible transcripts, agendas, and notes.",
+      "get_multiple_documents": "Fetch meeting documents, including notes, summaries, key points, action items, tags, recordings, or transcripts.",
+      "list_action_items": "List meeting action items with assignee, due date, completion state, and source meeting.",
+      "complete_action_item": "Mark one action item complete or reopen it. This changes Krisp.",
+      "complete_action_items": "Mark up to 50 action items complete or reopen them. This changes Krisp.",
+      "list_folders": "List or search meeting folders and their visibility, role, meeting count, and member count.",
+      "get_folder": "Read one folder and the meetings filed in it.",
+      "list_tags": "List or search meeting tags with their names, colors, and IDs.",
+      "attach_tag": "Add tags to one or more meetings, creating a missing tag when needed. This changes Krisp.",
+      "detach_tag": "Remove tags from one or more meetings. This changes Krisp.",
+      "bulk_update_speakers": "Replace generic transcript speaker labels with names. This changes Krisp.",
+      "import_recording": "Create a Krisp meeting by importing an audio or video recording. This changes Krisp.",
+      "get_import_status": "Check the processing status of an imported recording.",
+      "list_upcoming_meetings": "List upcoming calendar meetings for the next 1 to 14 days.",
+      "list_activities": "List recent Krisp Activity Center notifications and updates.",
+      "get_user_preferences": "Read the user's display name, timezone, and company preferences.",
+      "date_time": "Get the current date and time or enumerate dates in a range."
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "format": 1,
+  "id": "planetscale-insights",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.pscale.dev/mcp/planetscale-insights-only",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "PlanetScale Insights",
+    "summary": "Reads PlanetScale query performance insights and schema recommendations without executing queries.",
+    "categories": [
+      "Database",
+      "Analytics"
+    ],
+    "logo": {
+      "letter": "P",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+UGxhbmV0U2NhbGU8L3RpdGxlPjxwYXRoIGQ9Ik0wIDEyQzAgNS4zNzMgNS4zNzMgMCAxMiAwYzQuODczIDAgOS4wNjcgMi45MDQgMTAuOTQ3IDcuMDc3bC0xNS44NyAxNS44N2ExMS45ODEgMTEuOTgxIDAgMCAxLTEuOTM1LTEuMDk5TDE0Ljk5IDEySDEybC04LjQ4NSA4LjQ4NUExMS45NjIgMTEuOTYyIDAgMCAxIDAgMTJabTEyLjAwNCAxMkwyNCAxMi4wMDRDMjMuOTk4IDE4LjYyOCAyMy45OTggMTIuMDA0IDI0WiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "Which queries are slow in production?",
+      "Show schema recommendations for this database.",
+      "What query patterns use the most time?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "PlanetScale",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "planetscale_insights",
+    "source_config": {},
+    "agent": {
+      "name": "planetscale-insights",
+      "source": "planetscale_insights",
+      "tools": [
+        "get_insights",
+        "planetscale_list_schema_recommendations"
+      ],
+      "description": "Reads PlanetScale Insights query performance data and schema recommendations without running database queries.",
+      "owns": "You own PlanetScale Insights performance data and schema recommendations visible to this account. You only read and cannot execute SQL or change a database. You do not own databases outside PlanetScale.",
+      "holds_documents": false,
+      "first_for": "PlanetScale query performance and schema recommendations"
+    },
+    "tool_descriptions": {
+      "get_insights": "Read query performance data and query patterns from PlanetScale Insights.",
+      "planetscale_list_schema_recommendations": "List PlanetScale schema recommendations derived from production traffic."
+    }
+  }
+}

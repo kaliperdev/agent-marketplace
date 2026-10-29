@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "id": "circleback",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://circleback.ai/api/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Circleback",
+    "summary": "Searches meetings, transcripts, action items, calendar events, and email, and updates meeting follow-up.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#111827",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48dGl0bGU+Q2lyY2xlYmFjazwvdGl0bGU+PGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjAiIGZpbGw9IiMxMTE4MjciLz48cGF0aCBkPSJNMzEuNSAxNS41YTEyIDEyIDAgMSAwIDAgMTciIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJtMjkgMTAgOCA1LTggNXoiIGZpbGw9IiNmZmYiLz48L3N2Zz4="
+    },
+    "examples": [
+      "What did we decide in yesterday's customer call?",
+      "Find action items assigned to me.",
+      "Mark the launch follow-up as done."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Circleback",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "circleback",
+    "source_config": {},
+    "agent": {
+      "name": "circleback",
+      "source": "circleback",
+      "tools": [
+        "SearchMeetings",
+        "ReadMeetings",
+        "SearchTranscripts",
+        "GetTranscriptsForMeetings",
+        "SearchActionItems",
+        "CreateActionItem",
+        "UpdateActionItem",
+        "SearchCalendarEvents",
+        "SearchEmails",
+        "FindProfiles",
+        "FindCompanies",
+        "ListTeams",
+        "ListTags"
+      ],
+      "description": "Searches and updates the signed-in Circleback account: meetings, notes, transcripts, action items, calendar events, email, people, and companies.",
+      "owns": "You own the Circleback meetings and related follow-up this account can access. Search before reading a meeting or transcript. You may create or update action items only when requested. You do not own tasks stored in Asana, GitLab, or Intercom.",
+      "holds_documents": false,
+      "first_for": "Circleback meetings, transcripts, and action items",
+      "writes": [
+        "CreateActionItem",
+        "UpdateActionItem"
+      ]
+    },
+    "tool_descriptions": {
+      "SearchMeetings": "Find meetings by keyword, date range, tag, attendee, or domain.",
+      "ReadMeetings": "Read meeting notes, private notes, attendees, action items, insights, tags, and duration for selected meetings.",
+      "SearchTranscripts": "Search across meeting transcripts and return matching passages with timestamps.",
+      "GetTranscriptsForMeetings": "Read complete speaker-labelled transcripts for one or more meetings.",
+      "SearchActionItems": "Find action items by keyword, status, assignee, tag, or date range.",
+      "CreateActionItem": "Create an action item, optionally assigning it or linking it to a meeting.",
+      "UpdateActionItem": "Update an action item's title, description, status, or assignee.",
+      "SearchCalendarEvents": "Search past and upcoming calendar events with attendees, links, and join status.",
+      "SearchEmails": "Search connected email accounts by keyword, sender, recipient, or date range.",
+      "FindProfiles": "Find people and their interaction history by name.",
+      "FindCompanies": "Find companies by name or domain and their related meetings.",
+      "ListTeams": "List the workspace and teams, including IDs used for sharing.",
+      "ListTags": "List tags available for filtering meetings, transcripts, and action items."
+    }
+  }
+}

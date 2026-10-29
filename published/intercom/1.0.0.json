@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "id": "intercom",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.intercom.com/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Intercom",
+    "summary": "Searches and reads Intercom conversations and contacts in US-hosted workspaces.",
+    "categories": [
+      "CRM"
+    ],
+    "logo": {
+      "letter": "I",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48dGl0bGU+SW50ZXJjb208L3RpdGxlPjxyZWN0IHg9IjQiIHk9IjQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcng9IjciIGZpbGw9IiMxRjhERUQiLz48ZyBmaWxsPSIjZmZmIj48cmVjdCB4PSIxMSIgeT0iMTMiIHdpZHRoPSIzIiBoZWlnaHQ9IjE3IiByeD0iMS41Ii8+PHJlY3QgeD0iMTciIHk9IjExIiB3aWR0aD0iMyIgaGVpZ2h0PSIyMSIgcng9IjEuNSIvPjxyZWN0IHg9IjIzIiB5PSIxMCIgd2lkdGg9IjMiIGhlaWdodD0iMjMiIHJ4PSIxLjUiLz48cmVjdCB4PSIyOSIgeT0iMTEiIHdpZHRoPSIzIiBoZWlnaHQ9IjIxIiByeD0iMS41Ii8+PHJlY3QgeD0iMzUiIHk9IjEzIiB3aWR0aD0iMyIgaGVpZ2h0PSIxNyIgcng9IjEuNSIvPjxwYXRoIGQ9Ik0xMSAzNWM3LjggNSAxOC4yIDUgMjYgMHY0Yy04IDQuMy0xOCA0LjMtMjYgMHoiLz48L2c+PC9zdmc+"
+    },
+    "examples": [
+      "Find open conversations mentioning refunds.",
+      "Show the full conversation with this customer.",
+      "Find the contact with alice@example.com."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Intercom",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "intercom",
+    "source_config": {},
+    "agent": {
+      "name": "intercom",
+      "source": "intercom",
+      "tools": [
+        "search",
+        "fetch",
+        "search_conversations",
+        "get_conversation",
+        "search_contacts",
+        "get_contact"
+      ],
+      "description": "Searches and reads conversations and contacts in the signed-in Intercom workspace. The official MCP server currently supports US-hosted workspaces.",
+      "owns": "You own Intercom conversations and contacts visible to this account. You only read. Search first, then fetch the selected conversation or contact. You do not own CRM records in HubSpot, Close, or Attio.",
+      "holds_documents": false,
+      "first_for": "Intercom customer conversations and contacts"
+    },
+    "tool_descriptions": {
+      "search": "Search conversations or contacts with Intercom's query DSL; specify object_type and use the returned prefixed IDs with fetch.",
+      "fetch": "Read complete details for a conversation_* or contact_* result, including metadata, conversation parts, custom attributes, and an Intercom link.",
+      "search_conversations": "Search conversations by ID and filters such as source type, author, state, and timing.",
+      "get_conversation": "Read one conversation with all conversation parts and metadata.",
+      "search_contacts": "Search contacts by ID, name, email, phone, email domain, or custom attributes.",
+      "get_contact": "Read one contact with custom attributes, location, and activity timestamps."
+    }
+  }
+}

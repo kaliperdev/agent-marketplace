@@ -1,0 +1,135 @@
+{
+  "format": 1,
+  "id": "hubspot",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.hubspot.com",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "HubSpot",
+    "summary": "Searches, reads, and updates HubSpot CRM records, conversations, and campaigns for the signed-in account.",
+    "categories": [
+      "CRM"
+    ],
+    "logo": {
+      "letter": "H",
+      "color": "#FF7A59",
+      "image": "data:image/png;base64,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"
+    },
+    "examples": [
+      "What do we know about Acme?",
+      "Create a contact for Jane at Acme and a deal.",
+      "Which deals closed this month?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "HubSpot",
+    "signin": {
+      "client": "own-app",
+      "client_id_field": "HUBSPOT_CLIENT_ID",
+      "client_secret_field": "HUBSPOT_CLIENT_SECRET"
+    },
+    "fields": [
+      {
+        "key": "HUBSPOT_CLIENT_ID",
+        "label": "Client ID",
+        "type": "text",
+        "required": true,
+        "help": "From HubSpot: Development, MCP Connectors, your connector. The connector's redirect URL must be this server's sign-in redirect."
+      },
+      {
+        "key": "HUBSPOT_CLIENT_SECRET",
+        "label": "Client secret",
+        "type": "password",
+        "required": true,
+        "help": "The client secret of that same MCP connector."
+      }
+    ]
+  },
+  "router": {
+    "source": "hubspot",
+    "source_config": {},
+    "agent": {
+      "name": "hubspot",
+      "source": "hubspot",
+      "tools": [
+        "get_user_details",
+        "get_organization_details",
+        "discover_hubspot_schema",
+        "search_crm_objects",
+        "get_crm_objects",
+        "manage_crm_objects",
+        "manage_segment",
+        "query_crm_data",
+        "search_properties",
+        "get_properties",
+        "manage_custom_properties",
+        "manage_custom_pipelines",
+        "search_owners",
+        "get_campaign_attribution_reports",
+        "read_campaign_data",
+        "manage_campaign_objects",
+        "search_conversations",
+        "get_conversation_channel_metadata",
+        "search_intent_signals",
+        "get_marketing_email_analytics",
+        "manage_marketing_email",
+        "get_content_analytics_report",
+        "get_aeo_metrics",
+        "manage_aeo_prompts",
+        "manage_aeo_recommendations",
+        "manage_onboarding",
+        "tool_guidance"
+      ],
+      "description": "Searches and updates the HubSpot account the signed-in user can see: contacts, companies, deals, tickets, activities, conversations, properties, and campaigns. A question about a HubSpot record belongs here.",
+      "owns": "You own this HubSpot account, as far as the signed-in user can see: CRM records, activities, conversations, properties, pipelines, and campaigns. You can search, read, create, and update. manage_crm_objects creates and updates; it does not delete.\n\nCall get_user_details first. Search with search_crm_objects, read with get_crm_objects, then create or update. Call tool_guidance before the first SQL query or association change.\n\nYou do not own Attio or Close.",
+      "holds_documents": false,
+      "first_for": "HubSpot contacts, companies, and deals",
+      "writes": [
+        "manage_crm_objects",
+        "manage_segment",
+        "manage_custom_properties",
+        "manage_custom_pipelines",
+        "manage_campaign_objects",
+        "manage_marketing_email",
+        "manage_aeo_prompts",
+        "manage_aeo_recommendations",
+        "manage_onboarding"
+      ]
+    },
+    "tool_descriptions": {
+      "get_user_details": "Returns the authenticated user's information, account details, and per-object access (read and write).",
+      "get_organization_details": "Lists organization-wide teams, job titles, seat counts, and account information including timezone, currency, and account type.",
+      "discover_hubspot_schema": "Search HubSpot schema to discover available object types, or look up specific known types directly. Returns type names and read and write access status based on user permissions.",
+      "search_crm_objects": "Search and filter CRM records using filter groups, text queries, sorting, and pagination. Based on the [CRM search API](/docs/api-reference/latest/crm/search-the-crm). Supports up to five filter groups with up to six filters each. Filters within a group use AND logic, and groups are combined using OR logic. Maximum 200 results per page. Then get_crm_objects, then manage_crm_objects to create or update.",
+      "get_crm_objects": "Fetch one or more CRM objects by their IDs in a single request. Maximum 100 object IDs per request.",
+      "manage_crm_objects": "Create or update CRM records or activities. Before writing, check write availability for the target object using get_user_details. The tool presents a proposed-changes summary for user review and requires explicit user confirmation before executing any create or update. For association and association label operations, call tool_guidance first.",
+      "manage_segment": "Create static and dynamic segments. For static segments, also supports adding and removing CRM records from existing segments. Requires explicit user confirmation before each write.",
+      "query_crm_data": "Query HubSpot CRM data using SQL with HubSpot-specific extensions. Supports filtering, aggregation, and sorting. Call tool_guidance before the first query to understand syntax and limitations. Confirm property names with search_properties before querying. Does not support joins, column aliases, subqueries, association traversal, or currency conversion.",
+      "search_properties": "Find property definitions for an object type using keyword search. Returns property names, labels, and descriptions. Maximum 5 keywords per request.",
+      "get_properties": "Get full property definitions, including data types and enumeration values. Responses can be large, so it's recommended to fetch specific properties by name when possible.",
+      "manage_custom_properties": "Create custom properties for CRM objects.",
+      "manage_custom_pipelines": "Create and manage pipelines for supported objects. For HubSpot accounts with free tools, creating custom pipelines is not supported, but this tool can edit the default HubSpot-provided pipeline.",
+      "search_owners": "Find CRM record owners by name or email, or look up owners by ID. Maximum 100 results.",
+      "get_campaign_attribution_reports": "Get revenue and deal attribution data for campaigns. Attribution reports are scoped to closed-won deal attribution only. For general campaign engagement metrics or all-stage deal data, use read_campaign_data instead. Call tool_guidance before first use to understand required parameters. Supports long-running queries with polling.",
+      "read_campaign_data": "Read campaign analytics, asset metrics, or contact data in a single operation. Use the tool's built-in guidance to get the required parameter details before calling.",
+      "manage_campaign_objects": "Create or update marketing campaigns and manage campaign asset associations. Requires user confirmation before creating or modifying campaigns.",
+      "search_conversations": "Search conversations and messages from HubSpot inboxes. Supports lookup by CRM object, time range, or keyword, and aggregation by channel, inbox, or status.",
+      "get_conversation_channel_metadata": "List the inboxes, channels, and channel instances available in the account. Call this before using search_conversations to filter by channel, inbox, or instance IDs.",
+      "search_intent_signals": "Search and analyze buyer intent signals for companies and contacts. Supports searching for signal records, listing the account's signal types, and aggregating signal counts by company.",
+      "get_marketing_email_analytics": "Get analytics data for marketing emails based on sends within a given date range. Supports three modes: account-level aggregate statistics (sends, deliveries, opens, clicks, bounces, and unsubscribes), account email health diagnostics by MX group, and per-contact delivery and engagement details for a specific email send.",
+      "manage_marketing_email": "Manage marketing email settings and content. Supports: * Listing available templates, subscription types, and from addresses * Creating, updating, and cloning email drafts * Retrieving, editing, and previewing email content * Managing A/B variants. Creating and updating email drafts requires the following connector permissions: * View properties about the installing account including primary domain and user emails * See details about this account's teams * Create and edit marketing email content",
+      "get_content_analytics_report": "Run content analytics across landing pages, website pages, and blog posts. Supports totals, time series, summary aggregates, and viewer lookups.",
+      "get_aeo_metrics": "Get brand-level AEO analytics including share of voice, prompt performance trends, and competitor comparisons. Requires Marketing Hub Professional or Enterprise.",
+      "manage_aeo_prompts": "View tracked prompts and their performance details, including full AI engine response text from ChatGPT, Gemini, Perplexity, and Claude for any tracked prompt. Supports creating new tracked prompts. Requires Marketing Hub Professional or Enterprise.",
+      "manage_aeo_recommendations": "Review brand recommendations and act on them, including starting content generation actions such as blog posts and social posts. Requires user confirmation before executing any action. Requires Marketing Hub Professional or Enterprise.",
+      "manage_onboarding": "Assess an account's CRM onboarding status and guide users through onboarding steps, including goal-setting and task progression.",
+      "tool_guidance": "Retrieve usage instructions and guidance for one or more HubSpot MCP tools. Useful for understanding a tool's inputs and outputs in more depth, or learning how tools can work together."
+    }
+  }
+}

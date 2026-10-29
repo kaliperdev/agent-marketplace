@@ -1,0 +1,114 @@
+{
+  "format": 1,
+  "id": "readwise",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp2.readwise.io/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Readwise",
+    "summary": "Searches and organizes Readwise highlights and Reader documents.",
+    "categories": [
+      "Knowledge",
+      "Documents"
+    ],
+    "logo": {
+      "letter": "R",
+      "color": "#F6D44A",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJSZWFkd2lzZSI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiNGNkQ0NEEiLz48cGF0aCBmaWxsPSIjMTExIiBkPSJNMTQgMTVoOHYzNGgtOHptMTQgMGg4djM0aC04em0xNCAwaDh2MzRoLTh6Ii8+PHBhdGggZmlsbD0iI0Y2RDQ0QSIgZD0iTTIwIDI0aDI0djdIMjB6bTAgMTNoMjR2N0gyMHoiLz48L3N2Zz4="
+    },
+    "examples": [
+      "Search my highlights for spaced repetition.",
+      "Show today's Daily Review.",
+      "Archive these Reader documents."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Readwise",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "readwise",
+    "source_config": {},
+    "agent": {
+      "name": "readwise",
+      "source": "readwise",
+      "tools": [
+        "readwise_search_highlights",
+        "readwise_list_highlights",
+        "readwise_create_highlights",
+        "readwise_update_highlight",
+        "readwise_delete_highlight",
+        "readwise_get_daily_review",
+        "reader_search_documents",
+        "reader_list_documents",
+        "reader_create_document",
+        "reader_get_document_details",
+        "reader_move_documents",
+        "reader_bulk_edit_document_metadata",
+        "reader_export_documents",
+        "reader_get_export_documents_status",
+        "reader_list_tags",
+        "reader_add_tags_to_document",
+        "reader_remove_tags_from_document",
+        "reader_get_document_highlights",
+        "reader_create_highlight",
+        "reader_add_tags_to_highlight",
+        "reader_remove_tags_from_highlight",
+        "reader_set_highlight_notes"
+      ],
+      "description": "Searches and manages the signed-in user's Readwise highlights and Reader library, including documents, metadata, locations, tags, and notes.",
+      "owns": "You own highlights in Readwise and saved documents in Reader. Search or list before changing library items. Ask before deleting a highlight or bulk-editing documents.",
+      "holds_documents": true,
+      "first_for": "Readwise highlights and saved Reader documents",
+      "writes": [
+        "readwise_create_highlights",
+        "readwise_update_highlight",
+        "readwise_delete_highlight",
+        "reader_create_document",
+        "reader_move_documents",
+        "reader_bulk_edit_document_metadata",
+        "reader_export_documents",
+        "reader_add_tags_to_document",
+        "reader_remove_tags_from_document",
+        "reader_create_highlight",
+        "reader_add_tags_to_highlight",
+        "reader_remove_tags_from_highlight",
+        "reader_set_highlight_notes"
+      ]
+    },
+    "tool_descriptions": {
+      "readwise_search_highlights": "Search Readwise highlights using hybrid vector and full-text search.",
+      "readwise_list_highlights": "List Readwise highlights newest first with optional book, tag, and date filters.",
+      "readwise_create_highlights": "Create one or more Readwise highlights, optionally attached to a book or article.",
+      "readwise_update_highlight": "Update a Readwise highlight's text, note, location, or tags.",
+      "readwise_delete_highlight": "Delete a Readwise highlight.",
+      "readwise_get_daily_review": "Get today's Daily Review highlights selected by Readwise spaced repetition.",
+      "reader_search_documents": "Search the full text of documents in the Reader library.",
+      "reader_list_documents": "List Reader documents with location, category, tag, and recency filters.",
+      "reader_create_document": "Save a URL or an HTML or text document to Reader.",
+      "reader_get_document_details": "Read a Reader document's metadata and full Markdown content.",
+      "reader_move_documents": "Move Reader documents among inbox, later, shortlist, archive, and feed locations.",
+      "reader_bulk_edit_document_metadata": "Edit metadata for multiple Reader documents.",
+      "reader_export_documents": "Start an export of Reader documents as Markdown files in a ZIP archive.",
+      "reader_get_export_documents_status": "Check an export's status and retrieve its download URL when complete.",
+      "reader_list_tags": "List tags in the Reader library.",
+      "reader_add_tags_to_document": "Add tags to a Reader document.",
+      "reader_remove_tags_from_document": "Remove tags from a Reader document.",
+      "reader_get_document_highlights": "Get all highlights belonging to a Reader document.",
+      "reader_create_highlight": "Create a highlight on a Reader document using exact text.",
+      "reader_add_tags_to_highlight": "Add tags to a Reader document highlight.",
+      "reader_remove_tags_from_highlight": "Remove tags from a Reader document highlight.",
+      "reader_set_highlight_notes": "Set the note attached to a Reader document highlight."
+    }
+  }
+}

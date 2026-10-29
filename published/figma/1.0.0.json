@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "id": "figma",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.figma.com/mcp",
+    "timeout_seconds": 120
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Figma",
+    "summary": "Reads Figma designs and design systems, and creates diagrams and native Figma content.",
+    "categories": [
+      "Design",
+      "Documents"
+    ],
+    "logo": {
+      "letter": "F",
+      "color": "#ffffff",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0YyNEUxRSIgZD0iTTQgMGg4djhINGE0IDQgMCAwMTAtOHoiLz48cGF0aCBmaWxsPSIjRkY3MjYyIiBkPSJNMTIgMGg0YTQgNCAwIDAxMCA4aC00eiIvPjxwYXRoIGZpbGw9IiNBMjU5RkYiIGQ9Ik00IDhoOHY4SDRhNCA0IDAgMDEwLTh6Ii8+PHBhdGggZmlsbD0iIzFBQkNGRSIgZD0iTTEyIDhoNGE0IDQgMCAxMTAgOGgtNHoiLz48cGF0aCBmaWxsPSIjMEFDRjgzIiBkPSJNNCAxNmg4djRhNCA0IDAgMTEtOCAweiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "Inspect this Figma frame and explain its layout",
+      "Find the button component in our design system",
+      "Create a FigJam flowchart for the checkout flow"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Figma",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "figma",
+    "source_config": {},
+    "agent": {
+      "name": "figma",
+      "source": "figma",
+      "tools": [
+        "get_design_context",
+        "get_metadata",
+        "get_screenshot",
+        "get_variable_defs",
+        "search_design_system",
+        "whoami",
+        "create_new_file",
+        "generate_diagram",
+        "use_figma"
+      ],
+      "description": "Reads Figma designs, screenshots, variables, and design-system assets, and can create or edit native Figma and FigJam content.",
+      "owns": "You own Figma design context and canvas content visible to the signed-in account. Use read tools before making changes. A Figma file or node URL identifies the target. You do not own the implementation source code.",
+      "holds_documents": true,
+      "first_for": "Figma files, design specifications, components, variables, and FigJam diagrams",
+      "writes": [
+        "create_new_file",
+        "generate_diagram",
+        "use_figma"
+      ]
+    },
+    "tool_descriptions": {
+      "get_design_context": "Get design context and generated code for a Figma layer or selection.",
+      "get_metadata": "Get a lightweight XML outline with node names, types, positions, and sizes.",
+      "get_screenshot": "Render a screenshot of a Figma Design, FigJam, or Slides selection.",
+      "get_variable_defs": "List variables and styles used in a selection.",
+      "search_design_system": "Search connected libraries for components, variables, and styles.",
+      "whoami": "Get the signed-in Figma identity, plans, and seats.",
+      "create_new_file": "Create a blank Figma Design, FigJam, or Figma Slides file.",
+      "generate_diagram": "Create a FigJam diagram from a description or Mermaid syntax.",
+      "use_figma": "Create, edit, and inspect native content in Figma files."
+    }
+  }
+}

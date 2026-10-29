@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "id": "egnyte",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp-server.egnyte.com/mcp",
+    "timeout_seconds": 120,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Egnyte",
+    "summary": "Searches and reads files, folders, and AI answers from Egnyte.",
+    "categories": [
+      "Documents",
+      "Knowledge"
+    ],
+    "logo": {
+      "letter": "E",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJFZ255dGUiPjxwYXRoIGZpbGw9IiM3QUMxNDMiIGQ9Ik05IDE0aDQ2djlIMjB2N2gyOXY5SDIwdjdoMzV2OUg5eiIvPjxwYXRoIGZpbGw9IiMyMjIiIGQ9Ik05IDVoNDZ2Nkg5eiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "Find the latest security policy.",
+      "Summarize this Egnyte document.",
+      "What files mention Project Atlas?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Egnyte",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "egnyte",
+    "source_config": {},
+    "agent": {
+      "name": "egnyte",
+      "source": "egnyte",
+      "tools": [
+        "search",
+        "advanced_search",
+        "fetch",
+        "get_file_content",
+        "get_download_url",
+        "list_filesystem_by_path",
+        "summarize_document",
+        "ask_document",
+        "list_agents",
+        "get_agent_ask_status",
+        "whoami"
+      ],
+      "description": "Searches and reads Egnyte content visible to the signed-in user, including files, folders, document text, summaries, and available Egnyte Agents.",
+      "owns": "You own files and folders in Egnyte that this account can access. You only read and search; you do not upload, move, rename, or delete content. Some AI tools depend on the user's Egnyte plan.",
+      "holds_documents": true,
+      "first_for": "files and governed content stored in Egnyte"
+    },
+    "tool_descriptions": {
+      "search": "Search file names, indexed document content, and metadata and return ranked matches with snippets.",
+      "advanced_search": "Search files and folders with path, date, type, metadata, namespace, similarity, and sorting filters.",
+      "fetch": "Fetch the text of a document using the identifier returned by search.",
+      "get_file_content": "Read the content of a file by its Egnyte path or identifier.",
+      "get_download_url": "Create a temporary download URL for a file the signed-in user can access.",
+      "list_filesystem_by_path": "List files and folders beneath an Egnyte filesystem path.",
+      "summarize_document": "Generate an Egnyte AI summary of a specific document.",
+      "ask_document": "Ask a question about one document and optionally return citations.",
+      "list_agents": "List active Egnyte Agents created by or shared with the signed-in user.",
+      "get_agent_ask_status": "Read the status and completed answer of a previously submitted Egnyte Agent request.",
+      "whoami": "Return the authenticated Egnyte user's identity and domain information."
+    }
+  }
+}

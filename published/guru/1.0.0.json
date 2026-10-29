@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "id": "guru",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.api.getguru.com/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Guru",
+    "summary": "Searches trusted company knowledge and creates or updates Guru cards.",
+    "categories": [
+      "Knowledge",
+      "Documents"
+    ],
+    "logo": {
+      "letter": "G",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJHdXJ1Ij48cGF0aCBmaWxsPSIjMDBCREE1IiBkPSJNMzIgNGw3IDE3IDE3LTctNyAxOCAxMSAxMC0xOSAxLTIgMTctMTEtMTQtMTUgMTAgNS0xOEw0IDMwbDE5LTR6Ii8+PGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iOCIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "What is our refund policy?",
+      "Find the onboarding checklist.",
+      "Draft a Guru card for this process."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Guru",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "guru",
+    "source_config": {},
+    "agent": {
+      "name": "guru",
+      "source": "guru",
+      "tools": [
+        "answer_generation",
+        "search_documents",
+        "get_card_by_id",
+        "list_knowledge_agents",
+        "create_draft",
+        "update_card"
+      ],
+      "description": "Searches and maintains the verified Guru knowledge available to the signed-in account, including cards, connected sources, and Knowledge Agents.",
+      "owns": "You own company knowledge stored in Guru. Search before reading or changing a card. You may create drafts and suggest card updates, but you do not own documents stored in Notion, Coda, or Google Drive.",
+      "holds_documents": true,
+      "first_for": "verified company knowledge in Guru",
+      "writes": [
+        "create_draft",
+        "update_card"
+      ]
+    },
+    "tool_descriptions": {
+      "answer_generation": "Ask Guru a question and return a permission-aware answer grounded in verified company knowledge with citations.",
+      "search_documents": "Search Guru cards and connected documents by keyword.",
+      "get_card_by_id": "Read a specific Guru card by its identifier.",
+      "list_knowledge_agents": "List the Knowledge Agents available in the signed-in Guru workspace.",
+      "create_draft": "Create a draft Guru card from supplied content.",
+      "update_card": "Suggest or apply an update to an existing Guru card, subject to the signed-in user's permissions."
+    }
+  }
+}

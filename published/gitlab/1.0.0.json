@@ -1,0 +1,83 @@
+{
+  "format": 1,
+  "id": "gitlab",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://gitlab.com/api/v4/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "GitLab",
+    "summary": "Reads and updates GitLab work items, merge requests, repositories, and pipelines.",
+    "categories": [
+      "Tickets",
+      "Projects"
+    ],
+    "logo": {
+      "letter": "G",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48dGl0bGU+R2l0TGFiPC90aXRsZT48cGF0aCBmaWxsPSIjRkM2RDI2IiBkPSJtMjQgNDMgMTcuNy0xMi45LTQuMS0xMi43LTguMi0xMi4zTDI0IDIxLjcgMTguNiA1LjFsLTguMiAxMi4zLTQuMSAxMi43eiIvPjxwYXRoIGZpbGw9IiNFMjQzMjkiIGQ9Im0yNCA0MyA1LjQtMjEuM2gtMTAuOHpNNi4zIDMwLjFsMTIuMy04LjQtOC4yLTQuM3pNNDEuNyAzMC4xbC0xMi4zLTguNCA4LjItNC4zeiIvPjxwYXRoIGZpbGw9IiNGQ0EzMjYiIGQ9Ik0xMC40IDE3LjRoOC4yTDE4LjYgNS4xek0zNy42IDE3LjRoLTguMmwuMS0xMi4zeiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "Find open work items about authentication.",
+      "Show the changed files in merge request 42.",
+      "Create a bug work item for the failed login."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "GitLab",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "gitlab",
+    "source_config": {},
+    "agent": {
+      "name": "gitlab",
+      "source": "gitlab",
+      "tools": [
+        "list_work_items",
+        "get_work_item",
+        "list_branches",
+        "get_repository_file",
+        "list_repository_tree",
+        "get_commit",
+        "list_commits",
+        "save_work_item",
+        "save_note",
+        "add_branch",
+        "save_pipeline"
+      ],
+      "description": "Searches, reads, and updates GitLab.com projects: work items, repository files, branches, commits, comments, and CI/CD pipelines.",
+      "owns": "You own GitLab.com projects this account can access. Read before writing. You may create or update work items and notes, add branches, and operate pipelines when explicitly requested. You do not own local working-tree files or GitHub repositories.",
+      "holds_documents": false,
+      "first_for": "GitLab work items, repositories, and pipelines",
+      "writes": [
+        "save_work_item",
+        "save_note",
+        "add_branch",
+        "save_pipeline"
+      ]
+    },
+    "tool_descriptions": {
+      "list_work_items": "List or search project or group work items, including issues, tasks, incidents, objectives, and epics.",
+      "get_work_item": "Read one work item with its type, dates, assignees, labels, milestone, parent, and optional discussions.",
+      "list_branches": "List project branches, optionally filtering by name.",
+      "get_repository_file": "Read a committed text file from a project at a branch, tag, or commit.",
+      "list_repository_tree": "List files and directories at a repository path and ref without reading their contents.",
+      "get_commit": "Read commit metadata and optionally its diff or notes.",
+      "list_commits": "List commits in a project repository with supported filters.",
+      "save_work_item": "Create or update a GitLab work item, including assignment, labels, milestone, and state where supported.",
+      "save_note": "Add a comment to a merge request or work item, reply to a discussion, or resolve a discussion thread.",
+      "add_branch": "Create a project branch from an existing branch or commit SHA.",
+      "save_pipeline": "Run, retry, cancel, or rename a project CI/CD pipeline."
+    }
+  }
+}

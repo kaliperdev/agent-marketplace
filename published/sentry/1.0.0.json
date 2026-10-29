@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "id": "sentry",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.sentry.dev/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Sentry",
+    "summary": "Investigates Sentry issues, errors, traces, and logs and helps triage incidents.",
+    "categories": [
+      "Analytics"
+    ],
+    "logo": {
+      "letter": "S",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48dGl0bGU+U2VudHJ5PC90aXRsZT48cGF0aCBmaWxsPSIjMzYyRDU5IiBkPSJNMjcuMiA1LjVhNCA0IDAgMCAwLTYuOSAwTDQuNSAzMi45QTQgNCAwIDAgMCA4IDM5aDYuMWExNCAxNCAwIDAgMC00LjQtMTAuMmwyLjgtNC45QTE5LjUgMTkuNSAwIDAgMSAxOS43IDM5aDUuN2EyNSAyNSAwIDAgMC0xMC4xLTIwbDIuOC00LjlBMzAuNSAzMC41IDAgMCAxIDMxIDM5aDlhNCA0IDAgMCAwIDMuNS02LjF6TTM3IDMzLjVoLTEuMmEzNiAzNiAwIDAgMC0xNC45LTI0bDIuOS01IDE3IDI5eiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "What caused the latest production error?",
+      "Find errors involving checkout.ts.",
+      "Ask Seer to analyze issue WEB-123."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Sentry",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "sentry",
+    "source_config": {},
+    "agent": {
+      "name": "sentry",
+      "source": "sentry",
+      "tools": [
+        "find_organizations",
+        "find_projects",
+        "search_issues",
+        "get_issue_details",
+        "get_issue_tag_values",
+        "search_errors",
+        "search_traces",
+        "search_logs",
+        "analyze_issue_with_seer"
+      ],
+      "description": "Investigates Sentry organizations and projects: issues, errors, traces, logs, tags, and Seer analysis.",
+      "owns": "You own observability data in Sentry that this account can see. Find the organization and project before searching. You only investigate; do not change issue state or project configuration. You do not own source repository contents.",
+      "holds_documents": false,
+      "first_for": "Sentry errors, issues, traces, and logs"
+    },
+    "tool_descriptions": {
+      "find_organizations": "List or find Sentry organizations available to the signed-in account.",
+      "find_projects": "List or find projects in a Sentry organization.",
+      "search_issues": "Search Sentry issues using a natural-language query and project or organization context.",
+      "get_issue_details": "Read one issue's events, stack trace, metadata, and current status.",
+      "get_issue_tag_values": "Read values and counts for a tag on a Sentry issue.",
+      "search_errors": "Search error events using a natural-language query and time range.",
+      "search_traces": "Search distributed traces and performance data using a natural-language query.",
+      "search_logs": "Search Sentry logs using a natural-language query and time range.",
+      "analyze_issue_with_seer": "Ask Sentry Seer to analyze an issue and return root-cause and fix guidance."
+    }
+  }
+}

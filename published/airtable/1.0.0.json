@@ -1,0 +1,87 @@
+{
+  "format": 1,
+  "id": "airtable",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.airtable.com/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Airtable",
+    "summary": "Reads and updates Airtable bases, tables, fields, and records.",
+    "categories": [
+      "Databases",
+      "Product Management"
+    ],
+    "logo": {
+      "letter": "A",
+      "color": "#FFFFFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBaXJ0YWJsZSI+PHBhdGggZmlsbD0iI0ZDQjQwMCIgZD0iTTI4LjUgOC4yTDcuMiAxNy4xYy0yLjcgMS4xLTIuNyA0LjkgMCA2bDIxLjMgOC40YzIuMi45IDQuNy45IDYuOSAwbDIxLjQtOC40YzIuNy0xLjEgMi43LTQuOSAwLTZMMzUuNCA4LjJhOS4yIDkuMiAwIDAwLTYuOSAweiIvPjxwYXRoIGZpbGw9IiMxOEJGRkYiIGQ9Ik0zNS41IDM2Ljd2MTkuMWMwIDIuMyAyLjMgMy45IDQuNCAzbDE3LjctNi45YTMuMyAzLjMgMCAwMDIuMS0zVjI5LjhjMC0yLjMtMi4zLTMuOS00LjQtM2wtMTcuNyA2LjlhMy4zIDMuMyAwIDAwLTIuMSAzeiIvPjxwYXRoIGZpbGw9IiNGODJCNjAiIGQ9Ik0yNy45IDM3LjdMOS42IDI5LjlhMy4zIDMuMyAwIDAwLTQuNiAzdjE3LjZjMCAxLjMuOCAyLjUgMiAzbDE4LjMgNy44YzIuMi45IDQuNi0uNyA0LjYtM1Y0MC43YzAtMS4zLS44LTIuNS0yLTN6Ii8+PC9zdmc+"
+    },
+    "examples": [
+      "List the open tasks in the product base.",
+      "Add these leads to the CRM table.",
+      "Update task 123 to complete."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Airtable",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "airtable",
+    "source_config": {},
+    "agent": {
+      "name": "airtable",
+      "source": "airtable",
+      "tools": [
+        "ping",
+        "search_bases",
+        "list_bases",
+        "list_tables_for_base",
+        "get_table_schema",
+        "list_records_for_table",
+        "create_records_for_table",
+        "update_records_for_table",
+        "create_table",
+        "update_table",
+        "create_field",
+        "update_field"
+      ],
+      "description": "Finds Airtable bases and reads or updates their tables, schemas, fields, and records according to the signed-in user's permissions.",
+      "owns": "You own structured data in Airtable bases the account can access. Inspect the base and table schema before reading or changing records. You do not own external databases or spreadsheets.",
+      "holds_documents": false,
+      "first_for": "Airtable bases, tables, and records",
+      "writes": [
+        "create_records_for_table",
+        "update_records_for_table",
+        "create_table",
+        "update_table",
+        "create_field",
+        "update_field"
+      ]
+    },
+    "tool_descriptions": {
+      "ping": "Check the Airtable MCP connection and authentication status.",
+      "search_bases": "Search for Airtable bases by name or other available criteria.",
+      "list_bases": "List Airtable bases available to the signed-in account.",
+      "list_tables_for_base": "List the tables in a selected Airtable base.",
+      "get_table_schema": "Read a table's fields, types, and schema details.",
+      "list_records_for_table": "List and filter records in a selected table.",
+      "create_records_for_table": "Create records in a selected Airtable table, in batches supported by Airtable.",
+      "update_records_for_table": "Update existing records in a selected Airtable table.",
+      "create_table": "Create a table in an Airtable base.",
+      "update_table": "Update an existing Airtable table's configuration.",
+      "create_field": "Create a field in an Airtable table.",
+      "update_field": "Update an existing Airtable field."
+    }
+  }
+}

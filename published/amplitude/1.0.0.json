@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "id": "amplitude",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.amplitude.com/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Amplitude",
+    "summary": "Queries Amplitude product analytics and manages dashboards for the signed-in organization.",
+    "categories": [
+      "Analytics"
+    ],
+    "logo": {
+      "letter": "A",
+      "color": "#1D6EF2",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBbXBsaXR1ZGUiPjxjaXJjbGUgY3g9IjI0IiBjeT0iMjQiIHI9IjIwIiBmaWxsPSIjMUQ2RUYyIi8+PHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNCA0KSBzY2FsZSguMDUpIiBmaWxsPSIjZmZmIiBkPSJNNzczLjU3NSAzNzMuNjMzYy03Ni4zMzgtNi4wMjEtMTc5LjU5My05LjY1Ni0yNzYuNDM4LTExLjg1LTI5LjM1LTExNC42MzEtOTEuNzY5LTMyMy4xNTItMTY4LjgzLTMyMy4xNTItODAuNTcxIDAtMTM5LjU5MiAxNTYuODgyLTE3OS4yMzggMzE4LjkzOGwtMTExLjA2Ny0xLjU4M0MxNy4xMjUgMzU1LjY4OC4wNDIgMzcyLjUzLjA0MiAzOTMuNDFjMCAyMC42NyAxNi43NTYgMzcuNDI4IDM3LjQyNyAzNy40MjhoOTQuOTUyYy0xMS4yMTYgNTMuMDc4LTE5LjcwOCA5Ny42NjktMjYuMjA1IDEzOS40OTgtMi4zMTIgMTQuODg4IDkuMjI2IDI4LjMxNyAyNC4yOTMgMjguMzE3YTI0LjU3IDI0LjU3IDAgMCAwIDIzLjUyOS0xNy40OGMyMS41MzctNzEuNDAyIDQ2LjY1LTE1MC4xMTggNDYuNjUtMTUwLjExOEg0MzYuMzZjMzMuMjA1IDEyMS4yNzIgNzkuMjg2IDMyMy4wNzEgMTU3LjQwNCAzMjMuMDcxIDY5LjIyIDAgMTAzLjU0Ny04NC42MzMgMTMyLjYyLTIxNS4wMTggNC4yNjMtMTkuMTE1IDguNzg1LTM1LjgwNyAxMy40MTUtNTAuNDA5IDIuNTI3LTcuOTY4LTMuNDIyLTE2LjA4NS0xMS43NjEtMTYuMTUyLTUuMzQyLS4wNDMtMTAuMDYyIDMuNDk0LTExLjkxIDguNTA2LTguMDAzIDIxLjcxNC0xNC45NzUgNDEuOTY0LTIwLjE4IDU2LjUzMy0zMS43NzYgODguOTM4LTQ4LjExNiAxNDMuOTI1LTgzLjI2OSAxNDMuOTI1LTQ2LjQ1MSAwLTgwLjIyOS0xNzYuNTg3LTk4LjY1LTI1MC40NTZoMjU3LjI1NmMxNS44ODEgMCAyOC43NTYtMTIuODc1IDI4Ljc1Ni0yOC43NTYgMC0xNC45OTUtMTEuNTE3LTI3LjQ4Ny0yNi40NjYtMjguNjY2bS01NTUuODM4LTE1LjE5MmMzNy40MjktMTQ2LjQ4NSA4Mi42NzctMjQ3LjYzIDEwNy43NDQtMjQ3LjYzIDIyLjYzNyAwIDYwLjM1OSAxMzMuNzg5IDkxLjY5NyAyNDkuNDMzLTEwNi4zMzEtMS43MDgtMTkwLjc5NS0xLjc5OS0xOTkuNDQtMS44MDNaIi8+PC9zdmc+"
+    },
+    "examples": [
+      "What drove signup conversion this month?",
+      "Compare retention between these cohorts.",
+      "Add this analysis to an Amplitude dashboard."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Amplitude",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "amplitude",
+    "source_config": {},
+    "agent": {
+      "name": "amplitude",
+      "source": "amplitude",
+      "tools": [
+        "get_amplitude_context",
+        "query_amplitude_data",
+        "use_amp_dashboards"
+      ],
+      "description": "Reads Amplitude project context, runs product analytics, and manages dashboards for the signed-in organization.",
+      "owns": "You own Amplitude analytics and dashboards visible to this account. Read project context before querying. Dashboard changes require confirmation. You do not ingest production events.",
+      "holds_documents": false,
+      "first_for": "Amplitude product analytics, funnels, retention, and dashboards",
+      "writes": [
+        "use_amp_dashboards"
+      ]
+    },
+    "tool_descriptions": {
+      "get_amplitude_context": "Read organization and project context, including business definitions and rules configured in Amplitude.",
+      "query_amplitude_data": "Run an Amplitude analytics query such as segmentation, funnel, retention, or experiment analysis.",
+      "use_amp_dashboards": "Create or edit Amplitude dashboards and their content. This can change Amplitude."
+    }
+  }
+}

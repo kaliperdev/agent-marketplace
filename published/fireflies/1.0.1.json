@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "id": "fireflies",
+  "version": "1.0.1",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.fireflies.ai/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.5.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Fireflies",
+    "summary": "Searches and reads recorded Fireflies meetings: transcripts, summaries, and action items.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "F",
+      "color": "#6D28D9",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAUVBMVEVHcEzHL3zpPIq1P5jJOozPPZPILXm9OpG+O4+vP5uzO5TTMoTLNorDOZG7PJenO5LBMoLEL320P52nQ6PYO4bvQIzkQ5PeOH/GLXe8NYigSKwV9JhoAAAAC3RSTlMAFEMRr5zaYyzfVIIzMAkAAAThSURBVHic7ZrbeqowEIW1ooLhZLBifP8H3clMDpMQrNAU90UWSveF3eufNZMgfN3tsrKysrKysrKysrKy/lsdLud5XeAjXy8+oT70VR5+AVA+5zVU8D8XfBj4wNUrVNs2TdNW1fGyHqCKWj8HqacBiKmV7uDf1PJomuJrLcAwtUf/ARM4hABoLcXB36oo0wAM5hiGaQLKHF5cl4+qMYZixTBIgGHqP5AECIC21yLm+l91s7wPKoEu7s89AHR29i1xl2eQ/HFek8DQBf6AwJ/cAaA5sdfjh4XXtWVYTAAJOARtL81JAkHpxr/WsdfWXIktJJAAnSToYBJs9ehvAXjg37Qu9qmWESAAIJAB4PDmJAHPvW0w9KaOcLB60SSqGUD/bnAbgHL3W0DdX5TP1Om0ZDXiDMDRWX+uCXwAbW7HbmLNzOm4DKAbHIEef/Tneic0bVfC/KOlQ/WMKYIFeyK0ANzVm5MAOCcJGG9T/0z5NdgzVqxMQGVgqh8IALg3zYw9cwee2JI5VADoTTLgfgLEvol6Y/MhfX16fymWFRT/tBCdced2BsgVbzLyzGDo4gGBsdMSABqAAgB/P4HQn9WmaFOzNrbaL0zABWARJgB65TE97qT5Eb3dA5WAbw8EeAGkALWqn9nMycRNy2cL1gEkQDtACQwAueBoM1v5TADvDwEkEAQgkKA1CdirrR6zV5Vrjad3hwBbENjLN1wBDYAZPsbIwpu1H+H87mZIV4GzRwKXAO6x84EH9qNM4N2taJoA+isECkCSfxG8KV/+XJJA1N4CHIraW/E/e8OxLgFBIIRwCfyQ/WgRDARb3wJhApBHtccEfur7NIr3E/j9zenMr769F2dlfVr7Y0yFfsE+cI5+RGvVMwGqsoK7IP3ApRVtI+TRCNj/T7gP3H19q8No5XMRD4A89fC+ePdXvKYWt3tciiQVAKc3HzV+/bpagObOZ/wTJWBvfmkCVw1wKG63SQbfphHJWkAeusAzD9kA1wJFwEOClAlEAuj7q2uB7MEtWn/aBIy9evcqgN4O4U0xRHuQaAbCBHoIgMzAjcyB8rUrMWECbg0o/6AFN5rBd/IhDAIAe28I7yQDZe92ohQA/iZk6vcSsLLVp22B9+TT+QczgBnoAO7JEzAPQGz+0QQAgVwK0iRAA+i1rjMAIxafdAbsDHr+dbQFozxoAGla4PxFL7AFbC4BCUD9UwC0bhsUXgMiCagARpnBHyUgdAAygbkZUP7jmHYI7SZA/GcSAHtASN8C+VVM2A5ohIefwGhaQAlSJQD+YQIPmsBoG/AnAOjvz+AjmIFRj6CHkApACEdg9kEvgfHm2ycG0P7CW4ReAqG9QUgDQOu3i/BBE4j5pwMQgiZgF+HDrgJv/n2CFADW3x/CMIGYkgAIPwA7gSQBug8HSgLQehNoV6EBKF/pN386MJNAb+wNwN9qXwl/EVztCG4DsKuiAWwIUIRrYGuAc7gKr9vOwK6MbgIbAuz8CaAd2AjgGGnApgBlLIHHhgCHYmYEtwLYXcBfTCZgMwC1FUQ2gQ0B9vRS9AkAuRl9NgG5FP01uD3Arogtgi0BDsVkF9oWQBFcgxHcFgDmQN8SPj4wA0qXU9CBrQF25RG/DX9kBlCH4+mTCSiV5+KzAAhxLE5Ka/5GNCsrKysrKyuuf9U8JmDqI8dlAAAAAElFTkSuQmCC"
+    },
+    "examples": [
+      "What did we decide in yesterday's Acme call?",
+      "What are the action items from the roadmap review?",
+      "Which Fireflies channels can you see?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "send": {
+      "bearer": "FIREFLIES_API_KEY"
+    },
+    "fields": [
+      {
+        "key": "FIREFLIES_API_KEY",
+        "label": "API key",
+        "type": "password",
+        "required": true,
+        "help": "From Fireflies: Settings, then Developer Settings. Sent as Authorization: Bearer."
+      }
+    ]
+  },
+  "router": {
+    "source": "fireflies",
+    "source_config": {},
+    "agent": {
+      "name": "fireflies",
+      "source": "fireflies",
+      "tools": [
+        "fireflies_get_transcripts",
+        "fireflies_get_summary",
+        "fireflies_get_transcript",
+        "fireflies_list_channels"
+      ],
+      "description": "Searches and reads recorded Fireflies meetings the API key can see: transcripts, summaries, and action items. A question about what was said in a call, who attended, or what was agreed in a recorded meeting belongs here.",
+      "owns": "You own recorded Fireflies meetings this API key can see: their transcripts, summaries, and action items. You only read; you cannot share, rename, move, or clip a meeting.\n\nFind meetings with fireflies_get_transcripts, then read fireflies_get_summary. Open fireflies_get_transcript only when the summary is not enough: the decision often sits in the conversation, and the summary leaves it out. Use fireflies_list_channels when a folder filter needs a channel id.\n\nYou do not own Slack, Zoho Cliq, or Jira. You do not own Notion pages, even when a page is called meeting notes. You do not own the knowledge base: that is captured decisions, which may be older than the recording. You also do not own the shared Google Docs or the source repository.",
+      "holds_documents": false,
+      "first_for": "recorded meetings and what was said in them"
+    },
+    "tool_descriptions": {
+      "fireflies_get_transcripts": "Find recorded meetings. keyword is the search term (at most 255 characters). scope is title, sentences, or all. fromDate and toDate are YYYY-MM-DD. limit is at most 50; skip pages further. organizers and participants are email arrays. mine true keeps only this account's meetings. channelId limits the search to one folder: get that id from fireflies_list_channels. Returns meeting ids, titles, dates, participants, and summaries, not the transcript. Pass an id to fireflies_get_summary.",
+      "fireflies_get_summary": "Read one meeting's summary by transcriptId (the id from fireflies_get_transcripts): overview, action items, keywords, topics discussed, meeting type, and outline. Does not include the transcript. Read this before opening the full transcript.",
+      "fireflies_get_transcript": "Read one meeting's transcript by transcriptId: each sentence with its speaker and a [start - end] timestamp. Does not include the summary. Open this only when the summary is not enough. A live meeting (is_live true) is a snapshot of what has been said so far, not the finished transcript.",
+      "fireflies_list_channels": "List the Fireflies channels (folders) this key can see. Each has an id, title, privacy setting, and members. Pass an id as channelId to fireflies_get_transcripts when the question names a folder."
+    }
+  }
+}

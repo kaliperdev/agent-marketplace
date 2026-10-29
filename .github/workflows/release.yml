@@ -1,0 +1,70 @@
+# On every merge to main that changes the service: the tests, then the catalog
+# service image, pushed to ghcr.io/kaliperdev/catalog-service as 0.1.<build number>
+# and as `main`. Nothing restarts: prod runs the tag named in ~/catalog/
+# hosted-catalog.yml, so a new version goes live when that tag is changed and
+# `docker compose up -d` is run (deploy/README.md, "Updating the service").
+#
+# One-time setting: the package must let this repository write to it (the
+# package's Settings, then Manage Actions access, then add agent-marketplace
+# with the Write role), or the push below is refused.
+name: release
+
+on:
+  push:
+    branches: [main]
+    # A merge that changes only catalog entries, tests or docs ships no image.
+    paths:
+      - "marketplace/**"
+      - "Dockerfile"
+      - "pyproject.toml"
+      - "uv.lock"
+
+# One release at a time, in merge order: two quick merges must not finish out of
+# order and leave `main` on the older image.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # 0.1.1 was built by hand; GitHub's run numbers start at 1, so 1 is added (the
+  # first build here is 0.1.2) and a version is never repeated or lowered.
+  BUILD_OFFSET: 1
+
+jobs:
+  check:
+    uses: ./.github/workflows/checks.yml
+
+  image:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Name this build
+        run: echo "VERSION=0.1.$((GITHUB_RUN_NUMBER + BUILD_OFFSET))" >> "$GITHUB_ENV"
+      - name: Sign in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: |
+            ghcr.io/kaliperdev/catalog-service:${{ env.VERSION }}
+            ghcr.io/kaliperdev/catalog-service:main
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+      # Nothing is pushed unless the service's code loads in the image.
+      - name: Load the service from the image
+        run: docker run --rm --entrypoint /app/.venv/bin/python "ghcr.io/kaliperdev/catalog-service:$VERSION" -c "import marketplace.service"
+      - name: Push the image
+        run: |
+          docker push "ghcr.io/kaliperdev/catalog-service:$VERSION"
+          docker push ghcr.io/kaliperdev/catalog-service:main
+          echo "pushed ghcr.io/kaliperdev/catalog-service:$VERSION"

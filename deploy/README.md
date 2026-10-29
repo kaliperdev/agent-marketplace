@@ -32,6 +32,18 @@ saves the published record under `published/`. `deploy/publish-to-hosted.sh
 git-ignored `.env` (the password is `CATALOG_DB_PASSWORD` in the server's
 `~/catalog/catalog.env`).
 
+## Updating the service
+
+A merge to main that changes `marketplace/`, the `Dockerfile` or the lockfile
+builds and pushes `ghcr.io/kaliperdev/catalog-service:0.1.<n>`
+(`.github/workflows/release.yml`; the run's log names the version). Prod keeps
+running its old tag until it is told to move. On Kaliper prod, in `~/catalog`,
+put the new tag on the `catalog-service` image in `hosted-catalog.yml` and run:
+
+    docker compose -f hosted-catalog.yml --env-file catalog.env up -d
+
+The database is not touched. To go back, put the old tag in and run it again.
+
 ## Backup
 
 Every published version is also a file under `published/`, so the catalog can

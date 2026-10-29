@@ -1,0 +1,32 @@
+# The tests, on every pull request and first in every release (release.yml calls
+# this file). They drop and rebuild tables, so they run against a throwaway
+# database named catalog_test, as tests/conftest.py requires.
+name: checks
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: proto
+          POSTGRES_PASSWORD: proto
+          POSTGRES_DB: catalog_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U proto -d catalog_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run pytest tests -q
+        env:
+          CATALOG_TEST_DATABASE_URL: postgresql://proto:proto@localhost:5432/catalog_test

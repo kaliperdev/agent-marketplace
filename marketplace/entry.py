@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import datetime
 import re
 import urllib.parse
 from typing import Any
@@ -52,11 +53,16 @@ TOP_ORDER = ["format", "id", "version", "kind", "service", "needs_router", "publ
 SERVICE_ORDER = ["image", "url", "port", "timeout_seconds", "memory_mb", "start_seconds", "max_result_chars"]
 DISPLAY_ORDER = ["name", "summary", "categories", "logo", "examples"]
 LOGO_ORDER = ["letter", "color", "image"]
-CONNECTION_ORDER = ["method", "provider", "covers", "note", "send", "signin", "fields"]
+CONNECTION_ORDER = ["method", "provider", "covers", "note", "send", "signin", "fields", "guide"]
 SIGNIN_ORDER = ["client", "client_id_field", "client_secret_field", "authorization_url", "token_url", "scopes",
                 "resource", "authorize_params"]
 FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "options", "pattern", "patternHelp", "accept",
                "help"]
+# How to get what the form asks for, step by step (docs/connection-guides.md).
+GUIDE_ORDER = ["title", "summary", "time", "needs", "access", "steps", "trouble", "source", "checked"]
+STEP_ORDER = ["title", "text", "path", "link", "copy", "tip"]
+TROUBLE_ORDER = ["problem", "fix"]
+LINK_ORDER = ["label", "url"]
 ROUTER_ORDER = ["source", "source_config", "agent", "tool_descriptions"]
 # The router's own order in router/config/agents.json.
 AGENT_ORDER = ["name", "source", "tools", "description", "owns", "passthrough", "verbatim", "enabled", "extra_tools",
@@ -65,6 +71,7 @@ SOURCE_ORDER = ["tools_factory", "answerer_factory", "requires_credential", "req
 TOP_KEYS, DISPLAY_KEYS, LOGO_KEYS = set(TOP_ORDER), set(DISPLAY_ORDER), set(LOGO_ORDER)
 CONNECTION_KEYS, FIELD_KEYS, ROUTER_KEYS = set(CONNECTION_ORDER), set(FIELD_ORDER), set(ROUTER_ORDER)
 SIGNIN_KEYS = set(SIGNIN_ORDER)
+GUIDE_KEYS, STEP_KEYS, TROUBLE_KEYS, LINK_KEYS = set(GUIDE_ORDER), set(STEP_ORDER), set(TROUBLE_ORDER), set(LINK_ORDER)
 # What a sign-in's own steps set (router/app/oauth.py): an entry's
 # authorize_params may add to them, never replace them.
 SIGN_IN_PARAMS = {"response_type", "client_id", "redirect_uri", "state", "code_challenge",
@@ -124,6 +131,18 @@ def ordered(entry: dict) -> dict:
             out["connection"]["signin"] = _in_order(out["connection"]["signin"], SIGNIN_ORDER)
         if isinstance(out["connection"].get("fields"), list):
             out["connection"]["fields"] = [_in_order(f, FIELD_ORDER) for f in out["connection"]["fields"]]
+        guide = out["connection"].get("guide")
+        if isinstance(guide, dict):
+            guide = out["connection"]["guide"] = _in_order(guide, GUIDE_ORDER)
+            if isinstance(guide.get("steps"), list):
+                guide["steps"] = [_in_order(step, STEP_ORDER) for step in guide["steps"]]
+                for step in guide["steps"]:
+                    if isinstance(step, dict) and isinstance(step.get("link"), dict):
+                        step["link"] = _in_order(step["link"], LINK_ORDER)
+            if isinstance(guide.get("trouble"), list):
+                guide["trouble"] = [_in_order(t, TROUBLE_ORDER) for t in guide["trouble"]]
+            if "source" in guide:
+                guide["source"] = _in_order(guide["source"], LINK_ORDER)
     router = out.get("router")
     if isinstance(router, dict):
         router = out["router"] = _in_order(router, ROUTER_ORDER)
@@ -181,6 +200,86 @@ def _logo_image(value: Any) -> bool:
     except (binascii.Error, ValueError):
         return False
     return True
+
+
+def _short(value: Any, limit: int) -> bool:
+    """Text that fits its place on the page. Backticks mark `code` and ** marks
+    **bold**, the only formatting the page draws, so each must come in pairs."""
+    return (_text(value) and len(value) <= limit and value.count("`") % 2 == 0
+            and value.count("**") % 2 == 0)
+
+
+def _link(value: Any) -> bool:
+    return (isinstance(value, dict) and set(value) == LINK_KEYS and _short(value.get("label"), 48)
+            and _vendor_url(value.get("url")))
+
+
+def needs_guide(entry: dict) -> bool:
+    """Whether the person connecting this agent has to go and get something:
+    a key, a token or a key file from the vendor, or an app of their own to sign
+    in through. A plain sign-in or a built-in agent asks for nothing to fetch."""
+    connection = _object(entry.get("connection"))
+    fields = connection.get("fields") if isinstance(connection.get("fields"), list) else []
+    secret = any(isinstance(f, dict) and f.get("type") in ("password", "file") for f in fields)
+    own_app = _object(connection.get("signin")).get("client") == "own-app"
+    return (connection.get("method") == "form" and secret) or own_app
+
+
+def _check_guide(guide: Any, need, closed, errors: list[str]) -> None:
+    """connection.guide: the steps to get what the form asks for, drawn on the
+    catalog page beside the form. Plain text with `code` and **bold**, and
+    links to the vendor's own https pages only."""
+    if not isinstance(guide, dict):
+        errors.append("connection.guide must be an object")
+        return
+    closed(guide, GUIDE_KEYS, "connection.guide")
+    need(_short(guide.get("title"), 80), "connection.guide.title is required, up to 80 characters")
+    need(_short(guide.get("summary"), 320), "connection.guide.summary is required, up to 320 characters")
+    need(_short(guide.get("time"), 40), 'connection.guide.time says how long it takes, like "About 10 minutes"')
+    needs = guide.get("needs")
+    need(isinstance(needs, list) and 1 <= len(needs) <= 4 and all(_short(n, 140) for n in needs),
+         "connection.guide.needs lists 1 to 4 things to have before starting, up to 140 characters each")
+    need(_short(guide.get("access"), 320),
+         "connection.guide.access says what the agent can and cannot reach, up to 320 characters")
+    steps = guide.get("steps")
+    if not (isinstance(steps, list) and 2 <= len(steps) <= 10):
+        errors.append("connection.guide.steps lists 2 to 10 steps")
+        steps = steps if isinstance(steps, list) else []
+    for n, step in enumerate(steps, 1):
+        where = f"connection.guide step {n}"
+        if not isinstance(step, dict):
+            errors.append(f"{where} must be an object")
+            continue
+        closed(step, STEP_KEYS, where)
+        need(_short(step.get("title"), 80), f"{where} needs a title, up to 80 characters")
+        need(_short(step.get("text"), 640), f"{where} needs its text, up to 640 characters")
+        if "path" in step:
+            path = step["path"]
+            need(isinstance(path, list) and 1 <= len(path) <= 6 and all(_short(p, 48) for p in path),
+                 f"{where}: path is the menu to click through, 1 to 6 names of up to 48 characters")
+        if "link" in step:
+            need(_link(step["link"]), f"{where}: link is {{label, url}}, an https page of the vendor's")
+        if "copy" in step:
+            copy = step["copy"]
+            need(isinstance(copy, list) and 1 <= len(copy) <= 3
+                 and all(_text(c) and len(c) <= 160 and "`" not in c for c in copy),
+                 f"{where}: copy lists 1 to 3 values to copy, up to 160 characters each")
+        if "tip" in step:
+            need(_short(step["tip"], 320), f"{where}: tip is up to 320 characters")
+    trouble = guide.get("trouble", [])
+    need(isinstance(trouble, list) and len(trouble) <= 8, "connection.guide.trouble lists up to 8 problems")
+    for item in trouble if isinstance(trouble, list) else []:
+        closed(item, TROUBLE_KEYS, "connection.guide.trouble")
+        need(isinstance(item, dict) and _short(item.get("problem"), 140) and _short(item.get("fix"), 640),
+             "every connection.guide.trouble item has a problem (up to 140 characters) and a fix (up to 640)")
+    need(_link(guide.get("source")), "connection.guide.source is the vendor's own documentation: {label, url}")
+    checked = guide.get("checked")
+    try:
+        day = datetime.date.fromisoformat(checked) if isinstance(checked, str) and len(checked) == 10 else None
+    except ValueError:
+        day = None
+    need(day is not None and day <= datetime.date.today(),
+         "connection.guide.checked is the day someone last followed the steps, like 2026-10-30, not in the future")
 
 
 def _check_signin(entry: dict, connection: dict, signin: Any, fields: Any, hosted: bool, need, closed,
@@ -432,6 +531,8 @@ def validate(entry: Any) -> list[str]:
                      f"field {key!r} has a format check (pattern) the page cannot run in the browser")
     if signin is not None:
         _check_signin(entry, connection, signin, fields, hosted, need, closed, errors)
+    if "guide" in connection:
+        _check_guide(connection["guide"], need, closed, errors)
     send = connection.get("send")
     if send is not None and method == "signin":
         errors.append("connection.send is for a key typed into the form, not a sign-in")
@@ -465,4 +566,15 @@ def validate(entry: Any) -> list[str]:
     covered = keys | {c for c in covers if isinstance(c, str)} if isinstance(covers, list) else keys
     missing = [c for c in required_credentials(entry) if c not in covered]
     need(not missing, f"the agent needs {', '.join(missing)} but its connection form does not ask for it")
+    return errors
+
+
+def publish_problems(entry: Any) -> list[str]:
+    """What stops a new version being published: everything validate() checks,
+    and a setup guide for any agent whose connection asks for a key, token or
+    file. Versions published before guides existed stay as they are."""
+    errors = validate(entry)
+    if not errors and needs_guide(entry) and "guide" not in entry["connection"]:
+        errors.append("this connection asks for a key, token or file, so it needs connection.guide: "
+                      "the steps to get it (docs/connection-guides.md)")
     return errors

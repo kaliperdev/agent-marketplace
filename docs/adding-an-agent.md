@@ -42,6 +42,7 @@ Start from an existing entry. What the platform reads from it:
 | `router.agent.first_for` | the questions to ask it first, e.g. "meetings and what was said in them" |
 | `router.tool_descriptions` | what the model reads about each tool |
 | `connection.fields` | the form: `text`, `email`, `password`, `select`, `file` (with `accept`, e.g. `.json,.pem`) |
+| `connection.guide` | the steps to get what the form asks for: required for a key, token or file ([connection-guides.md](connection-guides.md)) |
 | `display.logo.image` | `logos/<name>.svg`, or the logo itself as `data:image/svg+xml;base64,…` (at most 64 KB) |
 
 A `{setting}` in the description, `owns` or a tool description is filled from
@@ -126,4 +127,6 @@ or, where the vendor needs the client's own app (Asana, Google):
     agents/publish-image.sh <id> <version>      # the package, for both chips
     deploy/publish-to-hosted.sh agents/<id>/catalog-<version>.json
 
-Published versions are locked: change anything, raise the version.
+Published versions are locked: change anything, raise the version. A version
+whose form asks for a key, token or file is refused without a setup guide:
+see [connection-guides.md](connection-guides.md).

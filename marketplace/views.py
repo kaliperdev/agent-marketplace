@@ -15,6 +15,10 @@ from .entry import required_credentials
 
 _PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 
+# What the catalog page says an agent is "by". Entries name Kaliper as publisher;
+# the page names the product.
+PUBLISHER = "Rytangle"
+
 
 def _fill(text: str) -> str:
     # The router fills {setting} placeholders from what each server saved for
@@ -29,7 +33,7 @@ def page_view(entry: dict) -> dict:
     return {
         "id": entry["id"],
         "name": display["name"],
-        "publisher": entry["publisher"],
+        "publisher": PUBLISHER,
         "version": entry["version"],
         "needsRouter": entry["needs_router"],
         "summary": display["summary"],

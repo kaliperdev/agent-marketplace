@@ -20,6 +20,10 @@ def test_the_page_view_has_the_shape_the_catalog_page_reads(entries):
     assert jira["credentials"] == ["JIRA_DOMAIN", "JIRA_EMAIL", "JIRA_API_TOKEN"]
 
 
+def test_the_page_says_every_agent_is_by_rytangle(entries):
+    assert {page_view(e)["publisher"] for e in entries} == {"Rytangle"}
+
+
 def test_whole_question_agents_show_as_answering(entries):
     kinds = {e["id"]: page_view(e)["kind"] for e in entries}
     assert kinds["textql"] == "answers"

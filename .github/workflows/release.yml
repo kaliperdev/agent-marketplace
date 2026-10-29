@@ -15,9 +15,12 @@ on:
     # A merge that changes only catalog entries, tests or docs ships no image.
     paths:
       - "marketplace/**"
+      - ".github/workflows/release.yml"
       - "Dockerfile"
       - "pyproject.toml"
       - "uv.lock"
+  # An image can also be built from main by hand.
+  workflow_dispatch:
 
 # One release at a time, in merge order: two quick merges must not finish out of
 # order and leave `main` on the older image.

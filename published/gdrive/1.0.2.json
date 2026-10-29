@@ -1,0 +1,160 @@
+{
+  "format": 1,
+  "id": "gdrive",
+  "version": "1.0.2",
+  "kind": "mcp",
+  "service": {
+    "image": "kaliper/agent-gdrive:1.0.0",
+    "port": 8080,
+    "timeout_seconds": 90,
+    "memory_mb": 512
+  },
+  "needs_router": "0.4.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Google Drive",
+    "summary": "Searches and reads the files shared with your service account, at any folder depth: Google Docs, Sheets and Slides, PDFs, and Word, Excel and PowerPoint files.",
+    "categories": [
+      "Documents"
+    ],
+    "logo": {
+      "letter": "D",
+      "color": "#ffffff",
+      "image": "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgODcuMyA3OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KCTxwYXRoIGQ9Im02LjYgNjYuODUgMy44NSA2LjY1Yy44IDEuNCAxLjk1IDIuNSAzLjMgMy4zbDEzLjc1LTIzLjhoLTI3LjVjMCAxLjU1LjQgMy4xIDEuMiA0LjV6IiBmaWxsPSIjMDA2NmRhIi8+Cgk8cGF0aCBkPSJtNDMuNjUgMjUtMTMuNzUtMjMuOGMtMS4zNS44LTIuNSAxLjktMy4zIDMuM2wtMjUuNCA0NGE5LjA2IDkuMDYgMCAwIDAgLTEuMiA0LjVoMjcuNXoiIGZpbGw9IiMwMGFjNDciLz4KCTxwYXRoIGQ9Im03My41NSA3Ni44YzEuMzUtLjggMi41LTEuOSAzLjMtMy4zbDEuNi0yLjc1IDcuNjUtMTMuMjVjLjgtMS40IDEuMi0yLjk1IDEuMi00LjVoLTI3LjUwMmw1Ljg1MiAxMS41eiIgZmlsbD0iI2VhNDMzNSIvPgoJPHBhdGggZD0ibTQzLjY1IDI1IDEzLjc1LTIzLjhjLTEuMzUtLjgtMi45LTEuMi00LjUtMS4yaC0xOC41Yy0xLjYgMC0zLjE1LjQ1LTQuNSAxLjJ6IiBmaWxsPSIjMDA4MzJkIi8+Cgk8cGF0aCBkPSJtNTkuOCA1M2gtMzIuM2wtMTMuNzUgMjMuOGMxLjM1LjggMi45IDEuMiA0LjUgMS4yaDUwLjhjMS42IDAgMy4xNS0uNDUgNC41LTEuMnoiIGZpbGw9IiMyNjg0ZmMiLz4KCTxwYXRoIGQ9Im03My40IDI2LjUtMTIuNy0yMmMtLjgtMS40LTEuOTUtMi41LTMuMy0zLjNsLTEzLjc1IDIzLjggMTYuMTUgMjhoMjcuNDVjMC0xLjU1LS40LTMuMS0xLjItNC41eiIgZmlsbD0iI2ZmYmEwMCIvPgo8L3N2Zz4="
+    },
+    "examples": [
+      "What are the Q3 totals in the budget sheet?",
+      "Summarise the latest board deck",
+      "Which files mention the pricing change?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "GOOGLE_SA_JSON",
+        "label": "Service account key",
+        "type": "file",
+        "required": true,
+        "help": "The JSON key file you download in step 4 of the guide below."
+      }
+    ],
+    "guide": {
+      "title": "Set up a Google service account",
+      "summary": "Rytangle reads Google Drive as a service account: a separate Google identity that sees only the folders you share with it. You will create one in Google Cloud, download its key, and share your folders with it.",
+      "time": "About 10 minutes",
+      "needs": [
+        "A Google account that can create projects in Google Cloud. A personal Gmail account works too.",
+        "Permission to share the Drive folders you want Rytangle to read."
+      ],
+      "access": "Read-only. Rytangle sees only the files and folders shared with this service account, and cannot edit, delete or reshare anything. The key is stored encrypted on this server.",
+      "steps": [
+        {
+          "title": "Choose a Google Cloud project",
+          "text": "Open Google Cloud and pick the project that will own the service account, or create one just for Rytangle. A project of its own keeps this key and its settings apart from anything else you run.",
+          "link": {
+            "label": "Create a project",
+            "url": "https://console.cloud.google.com/projectcreate"
+          },
+          "tip": "No billing account is needed."
+        },
+        {
+          "title": "Turn on the Google Drive API",
+          "text": "With your project selected, open the Google Drive API and click **Enable**. Rytangle uses it to list, search and read the files you share.",
+          "link": {
+            "label": "Open the Google Drive API",
+            "url": "https://console.cloud.google.com/apis/library/drive.googleapis.com"
+          },
+          "copy": [
+            "drive.googleapis.com"
+          ]
+        },
+        {
+          "title": "Create the service account",
+          "text": "Go to **Service accounts** and click **Create service account**. Give it a name you will recognise, like `rytangle-reader`, then click **Done**. Skip the roles: what it can read is decided by what you share with it, not by roles in Google Cloud.",
+          "path": [
+            "IAM & Admin",
+            "Service accounts",
+            "Create service account"
+          ],
+          "link": {
+            "label": "Create a service account",
+            "url": "https://console.cloud.google.com/iam-admin/serviceaccounts/create"
+          }
+        },
+        {
+          "title": "Download its JSON key",
+          "text": "Open the new service account and go to the **Keys** tab. Choose **Add key**, then **Create new key**, pick **JSON** and click **Create**. A `.json` file downloads to your computer.",
+          "path": [
+            "Keys",
+            "Add key",
+            "Create new key",
+            "JSON"
+          ],
+          "tip": "Google shows a key once. Keep the file private until you have uploaded it below, then delete your copy: anyone holding it can read what you share."
+        },
+        {
+          "title": "Copy the service account's email",
+          "text": "Back on **Service accounts**, copy the address in the **Email** column. It ends in `.iam.gserviceaccount.com`, and it is also the `client_email` inside the key file."
+        },
+        {
+          "title": "Share your folders with it",
+          "text": "In Google Drive, click **Share** on each folder Rytangle should read, paste the email and give it **Viewer** access. Everything inside a shared folder is included, at any depth. For a shared drive, add the email as a member with the **Viewer** role.",
+          "tip": "Untick **Notify people** before sharing: a service account has no inbox."
+        },
+        {
+          "title": "Upload the key and test",
+          "text": "Choose the `.json` file under **Service account key**, then click **Test connection**. When it passes, click **Save and turn on**."
+        }
+      ],
+      "trouble": [
+        {
+          "problem": "“Service account key creation is disabled”",
+          "fix": "Your Google Cloud organization blocks keys with the `iam.disableServiceAccountKeyCreation` policy, which is on by default for organizations created since May 2024. Ask an Organization Policy Administrator to allow key creation for this one project."
+        },
+        {
+          "problem": "“Google Drive API has not been used in project… or it is disabled”",
+          "fix": "Turn the API on in the same project the service account belongs to (step 2). If you just did, wait a few minutes and test again."
+        },
+        {
+          "problem": "The test passes but Rytangle finds no files",
+          "fix": "Nothing has been shared with the service account yet, or it was shared with another address. Open the folder's **Share** dialog and check the exact email from step 5 is listed."
+        },
+        {
+          "problem": "Drive will not let you share with the email",
+          "fix": "Your Google Workspace may block sharing outside your organization. A Workspace admin can allow it in the Admin console, under **Apps → Google Workspace → Drive and Docs → Sharing settings**."
+        },
+        {
+          "problem": "The key file is lost",
+          "fix": "Create a new key on the **Keys** tab and upload it here. Then delete the old key in Google Cloud, so it can no longer be used."
+        }
+      ],
+      "source": {
+        "label": "Google Cloud: Create service account keys",
+        "url": "https://docs.cloud.google.com/iam/docs/keys-create-delete"
+      },
+      "checked": "2026-10-30"
+    }
+  },
+  "router": {
+    "source": "gdrive",
+    "source_config": {},
+    "agent": {
+      "name": "gdrive",
+      "source": "gdrive",
+      "tools": [
+        "browse_drive",
+        "search_drive",
+        "read_drive_file"
+      ],
+      "description": "Searches and reads the files shared with the service account in Google Drive, at any folder depth: Google Docs, Sheets and Slides, PDFs, and Word, Excel and PowerPoint files -- specs, plans, proposals, budgets, trackers, meeting notes and decks that are not in the repository. A question naming a document without saying which system holds it may be here or in another document store: a filename does not say which, so ask every store.",
+      "owns": "You own the files shared in Google Drive. Search first -- it reaches every file you can see, however deeply nested, and looks inside them -- and browse only to orient yourself. You do not own the source repository.\n\nEvery file and folder in a listing carries a link. When you report what a file says, GIVE THAT LINK with it: a Drive id is something you pass to read_drive_file, not something a reader can open.\n\nA file marked \"cannot be read\" exists: say so, and never guess what is in it from its name.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "browse_drive": "List what is in Drive. Call with no folder_id to see what is shared with you, then call it again with a folder's id to see inside that folder. Files nested in subfolders are only visible by descending into them, so prefer search_drive when you know what you are looking for. Each file says what kind it is; one marked \"cannot be read\" exists, but its contents are not readable.",
+      "search_drive": "Find files whose name or contents contain a word or phrase: Google Docs, Sheets and Slides, PDFs, and Word, Excel and PowerPoint files. This searches every file you can reach, however deeply nested, so it is the fastest way to locate material. Returns ids to pass to read_drive_file.",
+      "read_drive_file": "Read the TEXT INSIDE one file, by the id shown by search_drive or browse_drive. Readable: Google Docs, Sheets and Slides; PDFs with selectable text; Word, Excel and PowerPoint; OpenDocument; CSV and plain text. A spreadsheet comes back one row per line with cells tab-separated, every sheet in turn. Not readable, and each says why rather than coming back empty: scanned PDFs, images, video, audio, forms, archives, old .doc/.xls/.ppt files, very large files, and files whose owner turned off downloading. When a file cannot be read, say it exists and its contents are not readable -- never guess them from its name."
+    }
+  }
+}

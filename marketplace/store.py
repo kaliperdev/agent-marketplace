@@ -12,7 +12,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 
-from .entry import ordered, parse_version, validate
+from .entry import missing_guide, ordered, parse_version, validate
 from .log import log, redact
 
 DEFAULT_URL = "postgresql://catalog:catalog@localhost:55433/catalog"
@@ -36,13 +36,15 @@ def apply_schema(conn: psycopg.Connection) -> None:
     conn.execute(SCHEMA.read_text(encoding="utf-8"))
 
 
-def publish(conn: psycopg.Connection, entry: dict, published_by: str) -> str:
+def publish(conn: psycopg.Connection, entry: dict, published_by: str, require_guide: bool = False) -> str:
     """Publish `entry`, and record the attempt whatever the outcome (publish_attempts).
-    Returns and raises exactly what _publish does."""
+    Returns and raises exactly what _publish does. `require_guide`: a new version
+    asking for a key, token or file must carry its setup guide (`catalog import`;
+    seeding the router's own agents does not ask)."""
     agent_id = str(entry.get("id") or "-") if isinstance(entry, dict) else "-"
     version = str(entry.get("version") or "-") if isinstance(entry, dict) else "-"
     try:
-        outcome = _publish(conn, entry, published_by)
+        outcome = _publish(conn, entry, published_by, require_guide)
     except OlderVersionError as err:
         _record(conn, agent_id, version, "older", str(err), published_by)
         raise
@@ -65,7 +67,7 @@ def _record(conn, agent_id: str, version: str, outcome: str, reason: str | None,
             outcome=outcome, error=redact(f"{type(err).__name__}: {err}"))
 
 
-def _publish(conn: psycopg.Connection, entry: dict, published_by: str) -> str:
+def _publish(conn: psycopg.Connection, entry: dict, published_by: str, require_guide: bool = False) -> str:
     errors = validate(entry)
     if errors:
         raise CatalogError("; ".join(errors))
@@ -93,6 +95,8 @@ def _publish(conn: psycopg.Connection, entry: dict, published_by: str) -> str:
                 raise OlderVersionError(
                     f"{agent_id} {version} is older than the latest published version, {latest_version}"
                 )
+        if require_guide and (reason := missing_guide(entry)):
+            raise CatalogError(reason)
         major, minor, patch = parse_version(version)
         conn.execute(
             "insert into agent_versions (agent_id, version, major, minor, patch, entry, published_by) "

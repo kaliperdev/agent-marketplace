@@ -25,7 +25,6 @@ from pathlib import Path
 import psycopg
 
 from . import store
-from .entry import publish_problems
 from .seed import entries_from_files
 from .views import router_registry
 
@@ -112,10 +111,7 @@ def main(argv: list[str] | None = None) -> int:
                 entry = _read_json(args.file)
                 if not isinstance(entry, dict):
                     raise store.CatalogError(f"{args.file} must hold one JSON object (a catalog entry)")
-                problems = publish_problems(entry)
-                if problems:
-                    raise store.CatalogError("; ".join(problems))
-                print(f"{entry.get('id')} {entry.get('version')}: {store.publish(conn, entry, by)}")
+                print(f"{entry.get('id')} {entry.get('version')}: {store.publish(conn, entry, by, require_guide=True)}")
             elif args.command == "export-router":
                 try:
                     _dump(router_registry(store.latest_entries(conn)))

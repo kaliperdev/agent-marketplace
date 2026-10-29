@@ -60,7 +60,7 @@ def test_a_guide_is_needed_for_a_key_token_or_file_and_for_an_own_app():
     (lambda g: g["trouble"].append({"problem": "No fix"}), "trouble item"),
     (lambda g: g.update(source={"label": "Docs", "url": "https://10.0.0.1/docs"}), "guide.source"),
     (lambda g: g.update(checked="30/10/2026"), "guide.checked"),
-    (lambda g: g.update(checked=(datetime.date.today() + datetime.timedelta(days=1)).isoformat()), "guide.checked"),
+    (lambda g: g.update(checked=(datetime.date.today() + datetime.timedelta(days=2)).isoformat()), "guide.checked"),
 ])
 def test_a_malformed_guide_is_refused(mutate, message):
     assert any(message in m for m in _with_guide(mutate)), message

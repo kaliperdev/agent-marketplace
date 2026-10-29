@@ -11,6 +11,24 @@ def run(capsys, *argv):
     return code, captured.out, captured.err
 
 
+# A new version of an agent whose form asks for a token carries a setup guide
+# (docs/connection-guides.md); the router's seeded agents predate guides.
+GUIDE = {
+    "title": "Create a Jira API token", "summary": "Jira is read with your own API token.", "time": "About 2 minutes",
+    "needs": ["A Jira Cloud account"], "access": "Read-only, through your own permissions.",
+    "steps": [{"title": "Open API tokens", "text": "Click **Create API token**.",
+               "link": {"label": "Open API tokens", "url": "https://id.atlassian.com/manage-profile/security/api-tokens"}},
+              {"title": "Paste it here", "text": "Paste it under **API token**."}],
+    "source": {"label": "Atlassian: API tokens", "url": "https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/"},
+    "checked": "2026-10-30",
+}
+
+
+def guided(entry):
+    entry["connection"]["guide"] = GUIDE
+    return entry
+
+
 def seed(capsys):
     return run(capsys, "seed", "--registry", str(FIX / "agents.json"), "--extras", str(FIX / "extras.json"), "--by", "sahil")
 
@@ -33,7 +51,7 @@ def test_list_shows_every_agent(catalog_env, capsys):
 def test_export_edit_import_publishes_a_new_version(catalog_env, capsys, tmp_path):
     seed(capsys)
     _, out, _ = run(capsys, "export", "jira")
-    entry = json.loads(out)
+    entry = guided(json.loads(out))
     entry["display"]["summary"] = "Reads Jira tickets."
     entry["version"] = "1.0.1"
     edited = tmp_path / "jira.json"
@@ -47,7 +65,7 @@ def test_export_edit_import_publishes_a_new_version(catalog_env, capsys, tmp_pat
 def test_importing_an_edit_without_a_new_version_is_refused(catalog_env, capsys, tmp_path):
     seed(capsys)
     _, out, _ = run(capsys, "export", "jira")
-    entry = json.loads(out)
+    entry = guided(json.loads(out))
     entry["display"]["summary"] = "Reads Jira tickets."
     edited = tmp_path / "jira.json"
     edited.write_text(json.dumps(entry), encoding="utf-8")
@@ -108,7 +126,7 @@ def test_a_catalog_without_tables_points_to_init_db(catalog_env, capsys):
 def test_reseeding_after_a_version_bump_skips_that_agent_and_finishes(catalog_env, capsys, tmp_path):
     seed(capsys)
     _, out, _ = run(capsys, "export", "jira")
-    entry = json.loads(out)
+    entry = guided(json.loads(out))
     entry["version"] = "1.0.1"
     entry["display"]["summary"] = "Reads Jira tickets."
     newer = tmp_path / "jira.json"
@@ -128,7 +146,7 @@ def test_the_cli_leaves_a_durable_trail_of_every_import_attempt(catalog_env, cap
     seed(capsys)
     assert [r[2] for r in trail(catalog_env)] == ["published"] * 8
     _, out, _ = run(capsys, "export", "jira")
-    entry = json.loads(out)
+    entry = guided(json.loads(out))
     entry["display"]["summary"] = "Reads Jira tickets."
     edited = tmp_path / "jira.json"
     edited.write_text(json.dumps(entry), encoding="utf-8")
@@ -144,3 +162,21 @@ def test_the_cli_leaves_a_durable_trail_of_every_import_attempt(catalog_env, cap
         ("jira", "1.0.1", "published", "ann"),
         ("jira", "1.0.0", "older", "ann"),
     ]
+
+
+def test_a_new_version_asking_for_a_token_without_a_guide_is_refused_and_recorded(catalog_env, capsys, tmp_path):
+    seed(capsys)
+    _, out, _ = run(capsys, "export", "jira")
+    entry = json.loads(out)
+    path = tmp_path / "jira.json"
+    # The published version itself, guide or not, is still "unchanged".
+    path.write_text(json.dumps(entry), encoding="utf-8")
+    assert run(capsys, "import", str(path))[0] == 0
+    entry["version"] = "1.0.1"
+    path.write_text(json.dumps(entry), encoding="utf-8")
+    code, _, err = run(capsys, "import", str(path), "--by", "ann")
+    assert code == 2 and "needs connection.guide" in err
+    assert trail(catalog_env)[-1] == ("jira", "1.0.1", "refused", "ann")
+    path.write_text(json.dumps(guided(entry)), encoding="utf-8")
+    code, out, _ = run(capsys, "import", str(path), "--by", "ann")
+    assert code == 0 and "jira 1.0.1: published" in out

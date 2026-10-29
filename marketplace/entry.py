@@ -278,7 +278,9 @@ def _check_guide(guide: Any, need, closed, errors: list[str]) -> None:
         day = datetime.date.fromisoformat(checked) if isinstance(checked, str) and len(checked) == 10 else None
     except ValueError:
         day = None
-    need(day is not None and day <= datetime.date.today(),
+    # A day's grace: the day is written where the steps were followed, and it is
+    # already tomorrow there for much of the world's today.
+    need(day is not None and day <= datetime.date.today() + datetime.timedelta(days=1),
          "connection.guide.checked is the day someone last followed the steps, like 2026-10-30, not in the future")
 
 
@@ -569,12 +571,19 @@ def validate(entry: Any) -> list[str]:
     return errors
 
 
+def missing_guide(entry: dict) -> str | None:
+    """Why a new version cannot be published without a setup guide, if it cannot."""
+    if needs_guide(entry) and "guide" not in _object(entry.get("connection")):
+        return ("this connection asks for a key, token or file, so it needs connection.guide: "
+                "the steps to get it (docs/connection-guides.md)")
+    return None
+
+
 def publish_problems(entry: Any) -> list[str]:
-    """What stops a new version being published: everything validate() checks,
-    and a setup guide for any agent whose connection asks for a key, token or
-    file. Versions published before guides existed stay as they are."""
+    """What stops this entry being published as a new version: everything
+    validate() checks, and a setup guide where one is needed. Versions published
+    before guides existed stay as they are."""
     errors = validate(entry)
-    if not errors and needs_guide(entry) and "guide" not in entry["connection"]:
-        errors.append("this connection asks for a key, token or file, so it needs connection.guide: "
-                      "the steps to get it (docs/connection-guides.md)")
+    if not errors and (reason := missing_guide(entry)):
+        errors.append(reason)
     return errors

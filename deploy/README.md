@@ -32,6 +32,31 @@ saves the published record under `published/`. `deploy/publish-to-hosted.sh
 git-ignored `.env` (the password is `CATALOG_DB_PASSWORD` in the server's
 `~/catalog/catalog.env`).
 
+### On merge (the usual way)
+
+A merge to main does the same by itself (`.github/workflows/publish.yml`): it
+publishes every `catalog-*.json` the merge added or changed, with its guide
+screenshots, then commits the records under `published/`. A failed publish shows
+as a failed run on the commit. It does not upload packages, so upload one before
+merging its entry.
+
+It signs in with its own key, one that can open the tunnel and nothing else, and
+its secrets live in the `hosted-catalog` environment, which only `main` can use:
+no branch or pull request job can read them. Set it up once:
+
+1. Make the key: `ssh-keygen -t ed25519 -N "" -C catalog-publish-github -f catalog_publish`
+2. Add this line to `~/.ssh/authorized_keys` on Kaliper prod (the public key from
+   `catalog_publish.pub` at the end):
+
+       restrict,port-forwarding,permitopen="127.0.0.1:55433",command="/bin/false" ssh-ed25519 AAAA... catalog-publish-github
+
+3. In the repo's Settings › Environments, create `hosted-catalog`, limited to the
+   `main` branch, with secrets `HOSTED_CATALOG_SSH` and `HOSTED_CATALOG_DATABASE_URL`
+   (as in `.env`), `HOSTED_CATALOG_SSH_KEY` (the whole `catalog_publish` file) and
+   `HOSTED_CATALOG_KNOWN_HOSTS` (the output of `ssh-keyscan -t ed25519 <kaliper prod>`).
+4. Let GitHub Actions bypass the ruleset on main, so the run can commit the records.
+5. Delete the two key files.
+
 ## Updating the service
 
 A merge to main that changes `marketplace/`, the `Dockerfile` or the lockfile

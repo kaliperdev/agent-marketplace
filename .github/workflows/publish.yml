@@ -1,0 +1,83 @@
+# On every merge to main: publish each catalog entry the merge added or changed
+# to the hosted catalog (Kaliper prod), then commit its published record under
+# published/, as deploy/publish-to-hosted.sh does from a laptop
+# (deploy/README.md, "Publishing a version"). An entry's guide screenshots
+# (agents/<id>/guide/) go with it.
+#
+# Upload a container agent's package (agents/publish-image.sh) before merging:
+# the packages are private, so this cannot check one is there.
+name: publish
+
+on:
+  push:
+    branches: [main]
+    paths: ["agents/*/catalog-*.json"]
+
+# One publish at a time, in merge order: two versions of one agent must reach the
+# catalog oldest first.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Its secrets live in this environment, which only main may use: a branch or
+    # pull request job, whoever wrote it, cannot read them (deploy/README.md).
+    environment: hosted-catalog
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+
+      # Secrets (repo Settings, then Environments, then hosted-catalog):
+      #   HOSTED_CATALOG_SSH           ec2-user@<kaliper prod>
+      #   HOSTED_CATALOG_SSH_KEY       a key that can only open the tunnel (deploy/README.md)
+      #   HOSTED_CATALOG_KNOWN_HOSTS   the server's line from `ssh-keyscan -t ed25519 <kaliper prod>`
+      #   HOSTED_CATALOG_DATABASE_URL  as in a laptop's .env
+      - name: Set up the SSH key
+        env:
+          SSH_KEY: ${{ secrets.HOSTED_CATALOG_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_CATALOG_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/catalog_publish
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/catalog_publish ~/.ssh/known_hosts
+          command -v nc >/dev/null || sudo apt-get install -y -q netcat-openbsd
+
+      - name: Publish the changed entries
+        env:
+          BEFORE: ${{ github.event.before }}
+          HOSTED_CATALOG_SSH: ${{ secrets.HOSTED_CATALOG_SSH }}
+          HOSTED_CATALOG_SSH_KEY: ~/.ssh/catalog_publish
+          HOSTED_CATALOG_DATABASE_URL: ${{ secrets.HOSTED_CATALOG_DATABASE_URL }}
+          # Recorded in the catalog as who published it.
+          LOGNAME: github-${{ github.actor }}
+        run: |
+          # The first push to a branch has no "before": compare with the commit before it.
+          git cat-file -e "$BEFORE^{commit}" 2>/dev/null || BEFORE="$GITHUB_SHA~1"
+          # sort -V: an agent's 1.0.9 before its 1.0.10.
+          files=$(git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- 'agents/*/catalog-*.json' | sort -V)
+          [ -n "$files" ] || { echo "no catalog entry added or changed"; exit 0; }
+          for file in $files; do
+            deploy/publish-to-hosted.sh "$file"
+          done
+
+      # Also after a failure, so what did publish is recorded.
+      - name: Commit the published records
+        if: always()
+        run: |
+          git add published/
+          git diff --cached --quiet && { echo "nothing new under published/"; exit 0; }
+          names=$(git diff --cached --name-only | sed -E 's|^published/([^/]+)/(.+)\.json$|\1 \2|' | paste -sd, - | sed 's/,/, /g')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "$names, as published"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:main
+          echo "committed: $names"

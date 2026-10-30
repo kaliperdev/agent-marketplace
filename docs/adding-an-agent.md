@@ -122,11 +122,27 @@ or, where the vendor needs the client's own app (Asana, Google):
   when a server updates to it, and its old sign-in is forgotten: the person signs
   in (or saves the form) again. Keep these the same unless the change needs it.
 
-## 4. Publish
+## 4. Open a pull request, merge, and it is live
 
-    agents/publish-image.sh <id> <version>      # the package, for both chips
-    deploy/publish-to-hosted.sh agents/<id>/catalog-<version>.json
+1. **On a branch of this repo**, add `agents/<id>/catalog-<version>.json` (and,
+   for a form that asks for a key, token or file, its guide and screenshots in
+   `agents/<id>/guide/`: [connection-guides.md](connection-guides.md)).
+2. **Check it locally**: `uv run pytest tests -q`. These are the checks CI runs.
+3. **Open a pull request.** CI's `test` check validates the entry, its guide and
+   every screenshot. Fill in the template's checklist.
+4. **Merge it yourself** once `test` is green. A pull request that touches only
+   `agents/` and `published/` needs no approval; anything else (the catalog's
+   code, tests, CI, docs) needs @kaliperdev's (`.github/CODEOWNERS`).
+5. **The merge publishes it** (`.github/workflows/publish.yml`): the new version
+   reaches the hosted catalog with its screenshots, and its record is committed
+   under `published/`. Every server's catalog page shows it within a minute.
+   Watch the run under Actions; a red run means it was not published, and says why.
 
-Published versions are locked: change anything, raise the version. A version
-whose form asks for a key, token or file is refused without a setup guide:
-see [connection-guides.md](connection-guides.md).
+An agent we wrote also needs its package uploaded before its entry is merged:
+`agents/publish-image.sh <id> <version>` (for both chips).
+
+Published versions are locked: to change anything, add the next version and
+merge that. A mistake is fixed the same way, never by editing what was published.
+
+By hand, from a laptop (the merge does this for you):
+`deploy/publish-to-hosted.sh agents/<id>/catalog-<version>.json`.

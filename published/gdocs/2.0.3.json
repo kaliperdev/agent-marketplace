@@ -1,0 +1,203 @@
+{
+  "format": 1,
+  "id": "gdocs",
+  "version": "2.0.3",
+  "kind": "mcp",
+  "service": {
+    "image": "kaliper/agent-gdocs:2.0.0",
+    "port": 8080,
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.4.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Google Docs",
+    "summary": "Searches and reads the Google Docs shared with your service account, at any folder depth.",
+    "categories": [
+      "Documents"
+    ],
+    "logo": {
+      "letter": "D",
+      "color": "#4285F4",
+      "image": "logos/googledocs.svg"
+    },
+    "examples": [
+      "Find the onboarding spec and summarise it",
+      "Which docs mention the pricing change?",
+      "What do the latest meeting notes say about next steps?"
+    ]
+  },
+  "connection": {
+    "method": "form",
+    "fields": [
+      {
+        "key": "GOOGLE_SA_JSON",
+        "label": "Service account key",
+        "type": "file",
+        "required": true,
+        "help": "The JSON key file you download in step 4 of the guide below."
+      }
+    ],
+    "guide": {
+      "title": "Set up a Google service account",
+      "summary": "Rytangle reads Google Docs as a service account: a separate Google identity that sees only the folders you share with it. You will create one in Google Cloud, download its key, and share your folders with it.",
+      "time": "About 10 minutes",
+      "needs": [
+        "A Google account that can create projects in Google Cloud. A personal Gmail account works too.",
+        "Permission to share the Drive folders you want Rytangle to read."
+      ],
+      "access": "Read-only. Rytangle sees only the documents in folders shared with this service account, and cannot edit, delete or reshare anything. The key is stored encrypted on this server.",
+      "steps": [
+        {
+          "title": "Choose a Google Cloud project",
+          "text": "Open Google Cloud and pick the project that will own the service account, or create one just for Rytangle. A project of its own keeps this key and its settings apart from anything else you run. On a Google Workspace account, leave your organisation selected.",
+          "link": {
+            "label": "Create a project",
+            "url": "https://console.cloud.google.com/projectcreate"
+          },
+          "image": {
+            "file": "01-project.webp",
+            "sha256": "09093cae0708134ac94aa5552ede329572c9a829543fc5732086beb63fb5018d",
+            "width": 1186,
+            "height": 531,
+            "alt": "Google Cloud's New Project form, with the project named Rytangle demo and Create highlighted"
+          },
+          "tip": "No billing account is needed."
+        },
+        {
+          "title": "Turn on the Google Drive and Docs APIs",
+          "text": "With your project selected, open each API below and click **Enable**. Rytangle finds documents through Google Drive and reads their text through Google Docs.",
+          "link": {
+            "label": "Open the Google Docs API",
+            "url": "https://console.cloud.google.com/apis/library/docs.googleapis.com"
+          },
+          "copy": [
+            "drive.googleapis.com",
+            "docs.googleapis.com"
+          ],
+          "image": {
+            "file": "02-docs-api.webp",
+            "sha256": "f381834fd636586a4234a4e03ed9aa804c2a10b3f4cf48fd1dc73ec292e1696c",
+            "width": 1186,
+            "height": 515,
+            "alt": "The Google Docs API page in Google Cloud, with Enable highlighted"
+          },
+          "tip": "Already set up Google Drive for Rytangle? Reuse that service account and key: turn on the Google Docs API in its project and skip to step 6."
+        },
+        {
+          "title": "Create the service account",
+          "text": "Go to **Service accounts** and click **Create service account**. Give it a name you will recognise, like `rytangle-reader`, then click **Create and close**. Skip the optional permissions: what it can read is decided by what you share with it, not by roles in Google Cloud.",
+          "path": [
+            "IAM and admin",
+            "Service accounts",
+            "Create service account"
+          ],
+          "link": {
+            "label": "Create a service account",
+            "url": "https://console.cloud.google.com/iam-admin/serviceaccounts/create"
+          },
+          "image": {
+            "file": "03-service-account.webp",
+            "sha256": "91f4ace5c3fc4d49f3d7a5856e0da652e248940830ee80a5eae9a2ea06637d1d",
+            "width": 824,
+            "height": 847,
+            "alt": "The Create service account form, named rytangle-reader, with Create and close highlighted"
+          }
+        },
+        {
+          "title": "Download its JSON key",
+          "text": "Click the new service account in the list and open its **Keys** tab. Choose **Add key**, then **Create new key**, pick **JSON** and click **Create**. A `.json` file downloads to your computer.",
+          "path": [
+            "Keys",
+            "Add key",
+            "Create new key",
+            "JSON"
+          ],
+          "image": {
+            "file": "04-json-key.webp",
+            "sha256": "3a9beeed12bd884cd170ae231d4a2827e37123f8ad1262ac19ee8c92bfb5dd2c",
+            "width": 781,
+            "height": 468,
+            "alt": "The Create private key dialog, with JSON selected and Create highlighted"
+          },
+          "tip": "Google shows a key once. Keep the file private until you have uploaded it below, then delete your copy: anyone holding it can read what you share."
+        },
+        {
+          "title": "Copy the service account's email",
+          "text": "Open the account's **Details** tab and copy its **Email**. It ends in `.iam.gserviceaccount.com`, and it is also the `client_email` inside the key file.",
+          "image": {
+            "file": "05-email.webp",
+            "sha256": "9b7469c5d919a88a620b3fd9d31a2061f1d1be4069771a190cb5e2ccc6a5de5d",
+            "width": 939,
+            "height": 437,
+            "alt": "The service account's Details tab, with its email address highlighted"
+          }
+        },
+        {
+          "title": "Share your folders with it",
+          "text": "In Google Drive, click **Share** on each folder Rytangle should read, paste the email and give it **Viewer** access. Everything inside a shared folder is included, at any depth. For a shared drive, add the email as a member with the **Viewer** role.",
+          "image": {
+            "file": "06-share-viewer.webp",
+            "sha256": "104bd039667fcb2ef1965715d52a5cc2ab4c951be704c19a7fdad0dd1e633866",
+            "width": 710,
+            "height": 404,
+            "alt": "Google Drive's Share dialog with the service account's email added as Viewer, Notify people unticked, and Share highlighted"
+          },
+          "tip": "Untick **Notify people** before sharing: a service account has no inbox."
+        },
+        {
+          "title": "Upload the key and test",
+          "text": "Choose the `.json` file under **Service account key**, then click **Test connection**. When it passes, click **Save and turn on**."
+        }
+      ],
+      "trouble": [
+        {
+          "problem": "“Service account key creation is disabled”",
+          "fix": "Your Google Cloud organization blocks keys with the `iam.disableServiceAccountKeyCreation` policy, which is on by default for organizations created since May 2024. Ask an Organization Policy Administrator to allow key creation for this one project."
+        },
+        {
+          "problem": "“Google Docs API has not been used in project… or it is disabled”",
+          "fix": "Turn the API on in the same project the service account belongs to (step 2). If you just did, wait a few minutes and test again."
+        },
+        {
+          "problem": "The test passes but Rytangle finds no files",
+          "fix": "Nothing has been shared with the service account yet, or it was shared with another address. Open the folder's **Share** dialog and check the exact email from step 5 is listed."
+        },
+        {
+          "problem": "Drive will not let you share with the email",
+          "fix": "Your Google Workspace may block sharing outside your organization. A Workspace admin can allow it in the Admin console, under **Apps → Google Workspace → Drive and Docs → Sharing settings**."
+        },
+        {
+          "problem": "The key file is lost",
+          "fix": "Create a new key on the **Keys** tab and upload it here. Then delete the old key in Google Cloud, so it can no longer be used."
+        }
+      ],
+      "source": {
+        "label": "Google Cloud: Create service account keys",
+        "url": "https://docs.cloud.google.com/iam/docs/keys-create-delete"
+      },
+      "checked": "2026-10-30"
+    }
+  },
+  "router": {
+    "source": "gdocs",
+    "source_config": {},
+    "agent": {
+      "name": "gdocs",
+      "source": "gdocs",
+      "tools": [
+        "browse_drive",
+        "search_docs",
+        "read_google_doc"
+      ],
+      "description": "Searches and reads the Google Docs shared with the service account, at any folder depth: specs, plans, proposals, meeting notes and prose documentation that is not in the repository. A question naming a document without saying which system holds it may be here or in another document store: a filename does not say which, so ask every store.",
+      "owns": "You own the shared Google Docs. Search first -- it reaches every document you can see, however deeply nested -- and browse only to orient yourself. You do not own the source repository.\n\nEvery document and folder in a listing carries a link. When you report what a document says, GIVE THAT LINK with it: a Drive id is something you pass to read_google_doc, not something a reader can open.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "browse_drive": "List what is in Drive. Call with no folder_id to see what is shared with you, then call it again with a folder's id to see inside that folder. Documents nested in subfolders are only visible by descending into them, so prefer search_docs when you know what you are looking for.",
+      "search_docs": "Find Google Docs whose title or body contains a word or phrase. This searches every document you can reach, however deeply nested, so it is the fastest way to locate material. Returns ids to pass to read_google_doc.",
+      "read_google_doc": "Read one Google Doc's full text by the id shown by search_docs or browse_drive."
+    }
+  }
+}

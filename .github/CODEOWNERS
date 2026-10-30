@@ -1,0 +1,28 @@
+# Who must approve a change, by path. A pull request that touches any path
+# below needs @kaliperdev's approval before it can merge (the ruleset on main
+# asks for code owner review).
+#
+# Not listed, so not owned: agents/ (catalog entries, their guides and
+# screenshots) and published/ (records of what was published). A pull request
+# that changes only those merges on green checks: CI validates every entry,
+# guide and screenshot (tests/), and nothing that runs today changes when an
+# agent is added. How to add one: docs/adding-an-agent.md.
+
+# The catalog: its format, checks, store and service.
+/marketplace/            @kaliperdev
+/db/                     @kaliperdev
+/pyproject.toml          @kaliperdev
+/uv.lock                 @kaliperdev
+/Dockerfile              @kaliperdev
+/docker-compose.yml      @kaliperdev
+
+# What CI checks: a weaker test would let a bad entry through.
+/tests/                  @kaliperdev
+
+# How it is built, published and hosted.
+/deploy/                 @kaliperdev
+/.github/                @kaliperdev
+
+# The rules everyone works by.
+/docs/                   @kaliperdev
+/README.md               @kaliperdev

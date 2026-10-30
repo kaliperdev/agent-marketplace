@@ -53,15 +53,17 @@ def build_handler(
 
         def _send(self, code: int, body: dict, quiet: bool = False) -> None:
             data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+            # Answers that went well are noise; everything else leaves a line.
+            # Written before the reply, so the line exists by the time the
+            # reply arrives (a test reading the log right after was flaky).
+            if not quiet and (code != 200 or access_log):
+                log("INFO" if code < 500 else "ERROR", "catalog", "response",
+                    method="GET", path=redact(self.path.split("?", 1)[0], 200), status=code)
             self.send_response(code)
             self.send_header("content-type", "application/json; charset=utf-8")
             self.send_header("content-length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
-            # Answers that went well are noise; everything else leaves a line.
-            if not quiet and (code != 200 or access_log):
-                log("INFO" if code < 500 else "ERROR", "catalog", "response",
-                    method="GET", path=redact(self.path.split("?", 1)[0], 200), status=code)
 
         def _send_image(self, kind: str, data: bytes) -> None:
             self.send_response(200)

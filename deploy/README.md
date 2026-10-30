@@ -54,8 +54,12 @@ no branch or pull request job can read them. Set it up once:
    `main` branch, with secrets `HOSTED_CATALOG_SSH` and `HOSTED_CATALOG_DATABASE_URL`
    (as in `.env`), `HOSTED_CATALOG_SSH_KEY` (the whole `catalog_publish` file) and
    `HOSTED_CATALOG_KNOWN_HOSTS` (the output of `ssh-keyscan -t ed25519 <kaliper prod>`).
-4. Let GitHub Actions bypass the ruleset on main, so the run can commit the records.
-5. Delete the two key files.
+4. A second key, for committing the records: add it to this repo as a deploy key
+   with write access ("publish records"), put its private half in the
+   environment as `PUBLISH_DEPLOY_KEY`, and let deploy keys bypass the `main`
+   ruleset. (On a personal account GitHub lets only deploy keys, not the Actions
+   app, bypass a ruleset.) Keep it the repo's only deploy key.
+5. Delete the key files.
 
 ## Updating the service
 

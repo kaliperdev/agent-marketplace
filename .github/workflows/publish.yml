@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   publish:
@@ -29,9 +29,14 @@ jobs:
     # pull request job, whoever wrote it, cannot read them (deploy/README.md).
     environment: hosted-catalog
     steps:
+      # Checked out with the publish deploy key, so the records commit below can
+      # be pushed to main: the main ruleset lets deploy keys past it (GitHub lets
+      # only organisation repos do that for the Actions app). The key is a secret
+      # of this main-only environment, like the rest.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ssh-key: ${{ secrets.PUBLISH_DEPLOY_KEY }}
       - uses: astral-sh/setup-uv@v6
 
       # Secrets (repo Settings, then Environments, then hosted-catalog):
@@ -39,6 +44,7 @@ jobs:
       #   HOSTED_CATALOG_SSH_KEY       a key that can only open the tunnel (deploy/README.md)
       #   HOSTED_CATALOG_KNOWN_HOSTS   the server's line from `ssh-keyscan -t ed25519 <kaliper prod>`
       #   HOSTED_CATALOG_DATABASE_URL  as in a laptop's .env
+      #   PUBLISH_DEPLOY_KEY           this repo's write deploy key "publish records"
       - name: Set up the SSH key
         env:
           SSH_KEY: ${{ secrets.HOSTED_CATALOG_SSH_KEY }}

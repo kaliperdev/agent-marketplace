@@ -45,6 +45,9 @@ if [ "$what" = "--list" ]; then
   exit
 fi
 
+# A new table (guide_images) reaches the hosted catalog with the first publish
+# that needs it: init-db only adds what is missing.
+uv run catalog init-db > /dev/null
 uv run catalog import "$what"
 mkdir -p "published/$id"
 uv run catalog export "$id" --version "$version" > "published/$id/$version.json"

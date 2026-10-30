@@ -24,7 +24,9 @@ from pathlib import Path
 
 import psycopg
 
+from . import images as shots
 from . import store
+from .entry import guide_images, ordered
 from .seed import entries_from_files
 from .views import router_registry
 
@@ -38,6 +40,48 @@ def _read_json(path: str):
         return json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as err:
         raise store.CatalogError(f"could not read {path}: {err}") from err
+
+
+def _guide_dir(entry_file: str) -> Path:
+    """An entry's screenshots sit beside it: agents/<id>/guide/."""
+    return Path(entry_file).resolve().parent / "guide"
+
+
+def _read_images(entry_file: str, entry: dict) -> dict[str, bytes]:
+    """The screenshots the entry's guide names, read from its guide/ folder and
+    keyed by the hash the entry gives each (publish checks the bytes match it)."""
+    found: dict[str, bytes] = {}
+    for image in guide_images(entry):
+        path = _guide_dir(entry_file) / str(image.get("file"))
+        try:
+            data = path.read_bytes()
+        except OSError as err:
+            raise store.CatalogError(f"could not read guide screenshot {path}: {err.strerror or err}") from err
+        found[str(image.get("sha256"))] = data
+    return found
+
+
+def fill_guide_images(entry_file: str) -> list[str]:
+    """Writes each guide screenshot's SHA-256, width and height into the entry,
+    from its file in guide/. Returns what changed."""
+    entry = _read_json(entry_file)
+    changed = []
+    for image in guide_images(entry):
+        path = _guide_dir(entry_file) / str(image.get("file"))
+        try:
+            data = path.read_bytes()
+        except OSError as err:
+            raise store.CatalogError(f"could not read guide screenshot {path}: {err.strerror or err}") from err
+        if reason := shots.problem(data):
+            raise store.CatalogError(f"guide screenshot {path.name} {reason}")
+        width, height = shots.dimensions(data)  # type: ignore[misc]
+        facts = {"sha256": shots.sha256(data), "width": width, "height": height}
+        if any(image.get(k) != v for k, v in facts.items()):
+            image.update(facts)
+            changed.append(path.name)
+    if changed:
+        Path(entry_file).write_text(json.dumps(ordered(entry), indent=2) + "\n", encoding="utf-8")
+    return changed
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -58,10 +102,21 @@ def main(argv: list[str] | None = None) -> int:
     imp = sub.add_parser("import", help="check and publish an entry from a file")
     imp.add_argument("file")
     imp.add_argument("--by")
+    fill = sub.add_parser("guide-images", help="write each guide screenshot's hash and size into an entry")
+    fill.add_argument("file")
     sub.add_parser("export-router", help="print router/config/agents.json rebuilt from the catalog")
     args = parser.parse_args(argv)
     by = getattr(args, "by", None) or getpass.getuser()
     url = os.environ.get("CATALOG_DATABASE_URL", store.DEFAULT_URL)
+
+    if args.command == "guide-images":  # files only: no database
+        try:
+            changed = fill_guide_images(args.file)
+        except store.CatalogError as err:
+            print(f"refused: {err}", file=sys.stderr)
+            return 2
+        print(f"updated: {', '.join(changed)}" if changed else "every screenshot is up to date")
+        return 0
 
     try:
         with store.connect(url) as conn:
@@ -111,7 +166,8 @@ def main(argv: list[str] | None = None) -> int:
                 entry = _read_json(args.file)
                 if not isinstance(entry, dict):
                     raise store.CatalogError(f"{args.file} must hold one JSON object (a catalog entry)")
-                print(f"{entry.get('id')} {entry.get('version')}: {store.publish(conn, entry, by, require_guide=True)}")
+                outcome = store.publish(conn, entry, by, require_guide=True, images=_read_images(args.file, entry))
+                print(f"{entry.get('id')} {entry.get('version')}: {outcome}")
             elif args.command == "export-router":
                 try:
                     _dump(router_registry(store.latest_entries(conn)))

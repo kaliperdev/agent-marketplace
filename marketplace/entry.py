@@ -60,7 +60,10 @@ FIELD_ORDER = ["key", "label", "type", "required", "placeholder", "default", "op
                "help"]
 # How to get what the form asks for, step by step (docs/connection-guides.md).
 GUIDE_ORDER = ["title", "summary", "time", "needs", "access", "steps", "trouble", "source", "checked"]
-STEP_ORDER = ["title", "text", "path", "link", "copy", "tip"]
+STEP_ORDER = ["title", "text", "path", "link", "copy", "image", "tip"]
+# A step's screenshot: its file beside the entry (agents/<id>/guide/), and what
+# the catalog keeps it by (marketplace/images.py).
+IMAGE_ORDER = ["file", "sha256", "width", "height", "alt"]
 TROUBLE_ORDER = ["problem", "fix"]
 LINK_ORDER = ["label", "url"]
 ROUTER_ORDER = ["source", "source_config", "agent", "tool_descriptions"]
@@ -72,6 +75,9 @@ TOP_KEYS, DISPLAY_KEYS, LOGO_KEYS = set(TOP_ORDER), set(DISPLAY_ORDER), set(LOGO
 CONNECTION_KEYS, FIELD_KEYS, ROUTER_KEYS = set(CONNECTION_ORDER), set(FIELD_ORDER), set(ROUTER_ORDER)
 SIGNIN_KEYS = set(SIGNIN_ORDER)
 GUIDE_KEYS, STEP_KEYS, TROUBLE_KEYS, LINK_KEYS = set(GUIDE_ORDER), set(STEP_ORDER), set(TROUBLE_ORDER), set(LINK_ORDER)
+IMAGE_KEYS = set(IMAGE_ORDER)
+_IMAGE_FILE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}\.(webp|png)$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 # What a sign-in's own steps set (router/app/oauth.py): an entry's
 # authorize_params may add to them, never replace them.
 SIGN_IN_PARAMS = {"response_type", "client_id", "redirect_uri", "state", "code_challenge",
@@ -139,6 +145,8 @@ def ordered(entry: dict) -> dict:
                 for step in guide["steps"]:
                     if isinstance(step, dict) and isinstance(step.get("link"), dict):
                         step["link"] = _in_order(step["link"], LINK_ORDER)
+                    if isinstance(step, dict) and isinstance(step.get("image"), dict):
+                        step["image"] = _in_order(step["image"], IMAGE_ORDER)
             if isinstance(guide.get("trouble"), list):
                 guide["trouble"] = [_in_order(t, TROUBLE_ORDER) for t in guide["trouble"]]
             if "source" in guide:
@@ -225,6 +233,27 @@ def needs_guide(entry: dict) -> bool:
     return (connection.get("method") == "form" and secret) or own_app
 
 
+def guide_images(entry: dict) -> list[dict]:
+    """Every screenshot the entry's guide shows, in step order."""
+    guide = _object(_object(entry.get("connection")).get("guide"))
+    steps = guide.get("steps") if isinstance(guide.get("steps"), list) else []
+    return [s["image"] for s in steps if isinstance(s, dict) and isinstance(s.get("image"), dict)]
+
+
+def _check_image(image: Any, where: str, need, closed) -> None:
+    if not isinstance(image, dict):
+        need(False, f"{where}: image is {{file, sha256, width, height, alt}}")
+        return
+    closed(image, IMAGE_KEYS, f"{where} image")
+    need(isinstance(image.get("file"), str) and bool(_IMAGE_FILE.match(image["file"])),
+         f"{where}: image.file names a .webp or .png in the entry's guide/ folder, like 04-create-key.webp")
+    need(isinstance(image.get("sha256"), str) and bool(_SHA256.match(image["sha256"])),
+         f"{where}: image.sha256 is the file's SHA-256 (catalog guide-images fills it in)")
+    need(_whole(image.get("width"), 200, 4000) and _whole(image.get("height"), 100, 4000),
+         f"{where}: image.width and image.height are its size in pixels (catalog guide-images fills them in)")
+    need(_short(image.get("alt"), 240), f"{where}: image.alt says what the screenshot shows, up to 240 characters")
+
+
 def _check_guide(guide: Any, need, closed, errors: list[str]) -> None:
     """connection.guide: the steps to get what the form asks for, drawn on the
     catalog page beside the form. Plain text with `code` and **bold**, and
@@ -264,6 +293,8 @@ def _check_guide(guide: Any, need, closed, errors: list[str]) -> None:
             need(isinstance(copy, list) and 1 <= len(copy) <= 3
                  and all(_text(c) and len(c) <= 160 and "`" not in c for c in copy),
                  f"{where}: copy lists 1 to 3 values to copy, up to 160 characters each")
+        if "image" in step:
+            _check_image(step["image"], where, need, closed)
         if "tip" in step:
             need(_short(step["tip"], 320), f"{where}: tip is up to 320 characters")
     trouble = guide.get("trouble", [])

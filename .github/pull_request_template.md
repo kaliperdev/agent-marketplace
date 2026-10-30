@@ -14,6 +14,7 @@ docs/connection-guides.md -->
 - [ ] `access` says what the agent can reach, what it cannot, and where the secret is kept
 - [ ] The narrowest access the agent works with (read-only where the vendor allows it)
 - [ ] `trouble` quotes the real error messages people hit
+- [ ] Every step's screenshot is from the same run, cropped, the action boxed, nothing identifying left in
 - [ ] Viewed on the catalog page, in light and dark, on a phone width
 
 ## Tests

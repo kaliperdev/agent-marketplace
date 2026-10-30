@@ -60,3 +60,13 @@ create table if not exists publish_attempts (
   by       text not null,
   at       timestamptz not null default now()
 );
+
+-- Setup guide screenshots, kept by their SHA-256: a published entry names each
+-- by its hash, so a picture can never change under a version that shows it.
+-- Rows are only ever added (marketplace/images.py says what is accepted).
+create table if not exists guide_images (
+  sha256     text primary key check (sha256 ~ '^[0-9a-f]{64}$'),
+  media_type text not null check (media_type in ('image/webp', 'image/png')),
+  data       bytea not null,
+  added_at   timestamptz not null default now()
+);

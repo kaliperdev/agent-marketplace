@@ -7,12 +7,14 @@ client installed as "jira 1.1.0" can never change underneath it.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import psycopg
 from psycopg.types.json import Jsonb
 
-from .entry import missing_guide, ordered, parse_version, validate
+from . import images as shots
+from .entry import guide_images, missing_guide, ordered, parse_version, validate
 from .log import log, redact
 
 DEFAULT_URL = "postgresql://catalog:catalog@localhost:55433/catalog"
@@ -36,15 +38,17 @@ def apply_schema(conn: psycopg.Connection) -> None:
     conn.execute(SCHEMA.read_text(encoding="utf-8"))
 
 
-def publish(conn: psycopg.Connection, entry: dict, published_by: str, require_guide: bool = False) -> str:
+def publish(conn: psycopg.Connection, entry: dict, published_by: str, require_guide: bool = False,
+            images: Mapping[str, bytes] | None = None) -> str:
     """Publish `entry`, and record the attempt whatever the outcome (publish_attempts).
     Returns and raises exactly what _publish does. `require_guide`: a new version
     asking for a key, token or file must carry its setup guide (`catalog import`;
-    seeding the router's own agents does not ask)."""
+    seeding the router's own agents does not ask). `images`: the guide's
+    screenshots by SHA-256; every one the entry names must be among them."""
     agent_id = str(entry.get("id") or "-") if isinstance(entry, dict) else "-"
     version = str(entry.get("version") or "-") if isinstance(entry, dict) else "-"
     try:
-        outcome = _publish(conn, entry, published_by, require_guide)
+        outcome = _publish(conn, entry, published_by, require_guide, images or {})
     except OlderVersionError as err:
         _record(conn, agent_id, version, "older", str(err), published_by)
         raise
@@ -67,12 +71,19 @@ def _record(conn, agent_id: str, version: str, outcome: str, reason: str | None,
             outcome=outcome, error=redact(f"{type(err).__name__}: {err}"))
 
 
-def _publish(conn: psycopg.Connection, entry: dict, published_by: str, require_guide: bool = False) -> str:
+def _publish(conn: psycopg.Connection, entry: dict, published_by: str, require_guide: bool = False,
+             images: Mapping[str, bytes] | None = None) -> str:
     errors = validate(entry)
     if errors:
         raise CatalogError("; ".join(errors))
     agent_id, version = entry["id"], entry["version"]
+    pictures = _guide_pictures(entry, images or {})
     with conn.transaction():
+        # Kept even when the version is already published ("unchanged"), so a
+        # catalog rebuilt from published/ gets its pictures back by importing.
+        for sha, (kind, data) in pictures.items():
+            conn.execute("insert into guide_images (sha256, media_type, data) values (%s, %s, %s) "
+                         "on conflict (sha256) do nothing", (sha, kind, data))
         row = conn.execute(
             "select version, entry from agent_versions where agent_id = %s" + _LATEST, (agent_id,)
         ).fetchone()
@@ -104,6 +115,29 @@ def _publish(conn: psycopg.Connection, entry: dict, published_by: str, require_g
             (agent_id, version, major, minor, patch, Jsonb(entry), published_by),
         )
     return "published"
+
+
+def _guide_pictures(entry: dict, images: Mapping[str, bytes]) -> dict[str, tuple[str, bytes]]:
+    """The screenshots the entry's guide names, checked: each given, the bytes
+    it names by hash, a WebP or PNG of the size it says."""
+    found: dict[str, tuple[str, bytes]] = {}
+    for image in guide_images(entry):
+        sha, name = image["sha256"], image["file"]
+        data = images.get(sha)
+        if data is None:
+            raise CatalogError(f"guide screenshot {name} was not given with the entry (agents/<id>/guide/{name})")
+        if shots.sha256(data) != sha:
+            raise CatalogError(f"guide screenshot {name} is not the file its entry names: run catalog guide-images")
+        if reason := shots.problem(data, image["width"], image["height"]):
+            raise CatalogError(f"guide screenshot {name} {reason}")
+        found[sha] = (shots.media_type(data), data)  # type: ignore[assignment]
+    return found
+
+
+def guide_image(conn: psycopg.Connection, sha256: str) -> tuple[str, bytes] | None:
+    """One guide screenshot by its hash: (media type, bytes)."""
+    row = conn.execute("select media_type, data from guide_images where sha256 = %s", (sha256,)).fetchone()
+    return (row[0], bytes(row[1])) if row else None
 
 
 def latest_entries(conn: psycopg.Connection) -> list[dict]:

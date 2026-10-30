@@ -8,6 +8,7 @@ database. Read-only by construction: there is no handler for anything but GET.
   GET /v1/catalog/page                     the same, in the shape the catalog page draws,
                                            each with every published version (to go back)
   GET /v1/agents/<id>/versions/<version>   one version of one agent, in full
+  GET /v1/guide-images/<sha256>            one setup guide screenshot, by its hash
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import argparse
 import hmac
 import json
 import os
+import re
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -28,6 +30,9 @@ Latest = Callable[[], list[dict]]
 One = Callable[[str, str], "dict | None"]
 Versions = Callable[[str], list[dict]]
 AllVersions = Callable[[], "dict[str, list[dict]]"]
+Image = Callable[[str], "tuple[str, bytes] | None"]
+
+_IMAGE_PATH = re.compile(r"^/v1/guide-images/([0-9a-f]{64})$")
 
 
 def build_handler(
@@ -37,6 +42,7 @@ def build_handler(
     all_versions: AllVersions | None = None,
     access_log: bool = False,
     read_keys: frozenset[str] = frozenset(),
+    image: Image = lambda sha256: None,
 ) -> type[BaseHTTPRequestHandler]:
     """`read_keys`: when set, every address but /health needs one of them as
     x-catalog-key. The hosted catalog is reachable from the internet; only
@@ -56,6 +62,16 @@ def build_handler(
             if not quiet and (code != 200 or access_log):
                 log("INFO" if code < 500 else "ERROR", "catalog", "response",
                     method="GET", path=redact(self.path.split("?", 1)[0], 200), status=code)
+
+        def _send_image(self, kind: str, data: bytes) -> None:
+            self.send_response(200)
+            self.send_header("content-type", kind)
+            self.send_header("content-length", str(len(data)))
+            # Its address is its content: it never changes, so it is never asked for twice.
+            self.send_header("cache-control", "public, max-age=31536000, immutable")
+            self.send_header("x-content-type-options", "nosniff")
+            self.end_headers()
+            self.wfile.write(data)
 
         def _key_ok(self) -> bool:
             given = (self.headers.get("x-catalog-key") or "").encode()
@@ -79,6 +95,12 @@ def build_handler(
                         found = all_versions()
                         of = lambda agent_id: found.get(agent_id, [])  # noqa: E731
                     self._send(200, {"agents": [{**page_view(e), "versions": of(e["id"])} for e in entries]})
+                elif match := _IMAGE_PATH.match(path):
+                    found = image(match.group(1))
+                    if found is None:
+                        self._send(404, {"error": "no such guide screenshot"})
+                    else:
+                        self._send_image(*found)
                 elif len(parts) == 6 and parts[1:3] == ["v1", "agents"] and parts[4] == "versions":
                     entry = one(parts[3], parts[5])
                     if entry is None:
@@ -116,12 +138,17 @@ def main(argv: list[str] | None = None) -> int:
         with store.connect(url) as conn:
             return store.all_versions(conn)
 
+    def image(sha256: str) -> tuple[str, bytes] | None:
+        with store.connect(url) as conn:
+            return store.guide_image(conn, sha256)
+
     access_log = bool(os.environ.get("CATALOG_ACCESS_LOG"))  # set it to log every 200 too
     # One key per client server, comma-separated, so one can be withdrawn alone.
     read_keys = frozenset(k.strip() for k in os.environ.get("CATALOG_READ_KEYS", "").split(",") if k.strip())
     server = ThreadingHTTPServer(
         (args.host, args.port),
-        build_handler(latest, one, all_versions=all_versions, access_log=access_log, read_keys=read_keys),
+        build_handler(latest, one, all_versions=all_versions, access_log=access_log, read_keys=read_keys,
+                      image=image),
     )
     log("INFO", "catalog", "listening", host=args.host, port=args.port, read_keys=len(read_keys))
     server.serve_forever()

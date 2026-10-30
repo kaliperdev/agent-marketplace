@@ -43,6 +43,7 @@ Each step:
 | `path` | the menu to click through, as the vendor names it: `["Keys", "Add key", "Create new key"]` |
 | `link` | the vendor's page where the step happens: `{label, url}`, https only |
 | `copy` | values to paste, each with a copy button: `["drive.googleapis.com"]` |
+| `image` | a screenshot of the step: `{file, sha256, width, height, alt}` (below) |
 | `tip` | the one thing people get wrong at this step |
 
 Text is plain. Two marks are drawn: `` `code` `` for values, names and file names,
@@ -73,6 +74,48 @@ is: no HTML, no markdown links, no images. Links go in `link` and `source`.
 8. **Write for a careful person in a hurry.** Second person, present tense, no
    "simply", "just" or "easily", no adjectives about the product. Call it
    Rytangle.
+
+## Screenshots
+
+A step can show a screenshot of the vendor's screen, with the thing to click
+boxed. They are taken during the hands-on run (below), so the pictures and
+the checked steps come from the same day.
+
+**Taking them**
+
+- A fresh account set up the way a new customer's would be; a browser profile
+  with no extensions; bookmarks bar hidden; English; zoom 100%; the window
+  about 1440 × 900, the same for every shot.
+- Demo names throughout: project **Rytangle demo**, service account
+  **rytangle-reader**, folder **Rytangle demo files**. Never a real customer's
+  name, and never the contents of a key file.
+- One shot per step, taken just before the click the step names, with what it
+  asks to type or choose already filled in.
+- Whatever goes wrong or looks different is captured too: those become the
+  guide's `trouble`.
+
+**Preparing them**
+
+- Crop to what the step needs: the form or dialog, not the browser around it.
+- Box the control the step names (the button, field or choice) in one orange
+  rounded outline; two at most.
+- Leave out or blur anything that identifies an account beyond the demo names:
+  numeric IDs, client IDs, avatars, other people.
+- WebP, about 1280 px wide (sharp on a 2x screen), at most 512 KB; 20–70 KB is
+  typical.
+- `alt` says what the picture shows and what is highlighted, for anyone who
+  cannot see it.
+
+**Adding them**
+
+Files go in `agents/<id>/guide/`, named by step (`04-json-key.webp`). Name each
+in its step with `file` and `alt`, then fill in the rest:
+
+    uv run catalog guide-images agents/<id>/catalog-<version>.json
+
+Publishing uploads them with the entry. The catalog keeps each by its SHA-256
+and serves it to the page, so a published version's pictures never change; a
+new picture is a new version, like any other change.
 
 ## Checking one
 
@@ -111,4 +154,5 @@ Copy into the pull request:
 - [ ] `access` says what the agent can reach, what it cannot, and where the secret is kept
 - [ ] The narrowest access the agent works with (read-only where the vendor allows it)
 - [ ] `trouble` quotes the real error messages people hit
+- [ ] Every step's screenshot is from the same run, cropped, the action boxed, nothing identifying left in
 - [ ] Viewed on the catalog page, in light and dark, on a phone width

@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "id": "salesforce",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.salesforce.com/platform/mcp/v1/platform/sobject-reads",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Salesforce CRM",
+    "summary": "Reads and searches the Salesforce records, schema, and relationships available to the signed-in user.",
+    "categories": [
+      "CRM"
+    ],
+    "logo": {
+      "letter": "S",
+      "color": "#0D9DDA",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48cGF0aCBmaWxsPSIjMEQ5RERBIiBkPSJNMTQgMzdhOSA5IDAgMCAxLTEuNC0xNy45QTEzIDEzIDAgMCAxIDM3LjggMjMgNyA3IDAgMSAxIDM4IDM3SDE0WiIvPjx0ZXh0IHg9IjI2IiB5PSIzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNi4yIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmIj5zYWxlc2ZvcmNlPC90ZXh0Pjwvc3ZnPg=="
+    },
+    "examples": [
+      "Which opportunities over $100,000 are currently in the pipeline?",
+      "Summarize the cases opened for Acme Corp in the last 7 days.",
+      "Find the contacts and open opportunities related to GlobalTech."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Salesforce",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "salesforce",
+    "source_config": {},
+    "agent": {
+      "name": "salesforce",
+      "source": "salesforce",
+      "tools": [
+        "describeSObject",
+        "soqlQuery",
+        "soslSearch",
+        "getUserInfo",
+        "getRecentlyViewed",
+        "getRelatedRecords"
+      ],
+      "description": "Reads Salesforce CRM data for the signed-in user: object schemas, accounts, contacts, leads, opportunities, cases, recently viewed records, text search results, and related records. This server is read-only and cannot create, update, or delete Salesforce data.",
+      "owns": "You own the Salesforce org data the signed-in user is authorized to read, subject to Salesforce object permissions, field-level security, and sharing rules. Use describeSObject before unfamiliar queries, then use soqlQuery for known objects and fields; use soslSearch when the object is unknown and getRelatedRecords when a parent record and relationship are known. You can read and search only. You do not own other CRM systems, the source repository, or any Salesforce data outside the signed-in user’s permissions. When reporting Salesforce records, include the Salesforce record URL when one is available.",
+      "holds_documents": false
+    },
+    "tool_descriptions": {
+      "describeSObject": "Returns Salesforce schema information optimized for LLM consumption. Call without parameters first for a compact index of queryable objects, then pass an object name for field-level details and relationship information.",
+      "soqlQuery": "Executes a SOQL query to retrieve Salesforce records. Use a WHERE clause and a LIMIT clause, and use relationship queries or child subqueries when appropriate.",
+      "soslSearch": "Executes a text search across multiple Salesforce objects. Use it when a search term may exist in multiple object types or the object containing the data is not known.",
+      "getUserInfo": "Returns the authenticated Salesforce user’s identity and context, including user ID, name, email, role, profile, manager, local time, and timezone.",
+      "getRecentlyViewed": "Returns records of a specified Salesforce object type that the user recently viewed or modified, ordered by last viewed date.",
+      "getRelatedRecords": "Retrieves child records related to a Salesforce parent record by traversing a specified relationship path."
+    }
+  }
+}

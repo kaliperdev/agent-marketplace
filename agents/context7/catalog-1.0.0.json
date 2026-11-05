@@ -1,0 +1,57 @@
+{
+  "format": 1,
+  "id": "context7",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.context7.com/mcp/oauth",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Context7",
+    "summary": "Finds current library documentation and code examples for the technologies used by the workspace.",
+    "categories": [
+      "Developer Tools",
+      "Documents"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#111827",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48cmVjdCB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMCIgZmlsbD0iIzExMTgyNyIvPjx0ZXh0IHg9IjI0IiB5PSIzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiPkM8L3RleHQ+PC9zdmc+"
+    },
+    "examples": [
+      "How do I configure Next.js middleware in the current version?",
+      "Find the current Prisma transaction API example.",
+      "What is the recommended React Router setup for this project?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Context7",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "context7",
+    "source_config": {},
+    "agent": {
+      "name": "context7",
+      "source": "context7",
+      "tools": [
+        "resolve-library-id",
+        "query-docs"
+      ],
+      "description": "Finds current public library documentation and code examples. Resolve a library first, then query one focused concept. This agent does not access private repositories or modify code.",
+      "owns": "You own Context7's indexed public library documentation and examples. You can resolve library IDs and retrieve current documentation context. You do not own private repositories, application source code, package registries outside the indexed sources, or the workspace's files. Include the source library or documentation link when available.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "resolve-library-id": "Resolves a library name and focused question to a Context7-compatible library ID and returns matching library metadata.",
+      "query-docs": "Fetches current documentation context and code examples for a specific Context7 library ID and focused question."
+    }
+  }
+}

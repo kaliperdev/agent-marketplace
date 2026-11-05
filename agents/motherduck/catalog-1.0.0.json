@@ -1,0 +1,61 @@
+{
+  "format": 1,
+  "id": "motherduck",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.motherduck.com/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "MotherDuck",
+    "summary": "Inspects MotherDuck schemas and runs read-only SQL queries against the signed-in workspace data.",
+    "categories": [
+      "Analytics",
+      "Databases"
+    ],
+    "logo": {
+      "letter": "M",
+      "color": "#F6C344",
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDQ4IDQ4Ij48cmVjdCB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHJ4PSIxMCIgZmlsbD0iI0Y2QzM0NCIvPjx0ZXh0IHg9IjI0IiB5PSIzMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxMTE4MjciPk08L3RleHQ+PC9zdmc+"
+    },
+    "examples": [
+      "Which tables contain revenue data?",
+      "Show monthly active users for the last six months.",
+      "Compare support volume by customer segment this quarter."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "MotherDuck",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "motherduck",
+    "source_config": {},
+    "agent": {
+      "name": "motherduck",
+      "source": "motherduck",
+      "tools": [
+        "list_databases",
+        "search_catalog",
+        "ask_docs_question",
+        "query"
+      ],
+      "description": "Explores the signed-in MotherDuck workspace and runs read-only SELECT queries for business analytics. It does not modify tables, schemas, or data.",
+      "owns": "You own the MotherDuck databases and schemas the signed-in account can read. Use list_databases and search_catalog to discover available data, then use query for read-only analysis. You cannot insert, update, delete, create, or alter data because the write-capable query_rw tool is intentionally excluded. You do not own other databases or the source repository. Include the SQL query and relevant MotherDuck link when available.",
+      "holds_documents": false
+    },
+    "tool_descriptions": {
+      "list_databases": "Lists the MotherDuck databases available to the authenticated account.",
+      "search_catalog": "Searches the MotherDuck catalog for databases, schemas, tables, and other data objects.",
+      "ask_docs_question": "Answers a focused question using MotherDuck and DuckDB documentation.",
+      "query": "Runs a read-only SQL SELECT query against MotherDuck and returns the result with the executed SQL."
+    }
+  }
+}

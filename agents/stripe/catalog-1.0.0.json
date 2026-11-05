@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "id": "stripe",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.stripe.com",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Stripe",
+    "summary": "Reads Stripe customers, payments, invoices, and products through Stripe's official hosted MCP server.",
+    "categories": [
+      "Payments",
+      "Billing"
+    ],
+    "logo": {
+      "letter": "S",
+      "color": "#635BFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+U3RyaXBlPC90aXRsZT48cGF0aCBkPSJNMTMuOTc2IDkuMTVjLTIuMTcyLS44MDYtMy4zNTYtMS40MjYtMy4zNTYtMi40MDkgMC0uODMxLjY4My0xLjMwNSAxLjkwMS0xLjMwNSAyLjIyNyAwIDQuNTE1Ljg1OCA2LjA5IDEuNjMxbC44OS01LjQ5NEMxOC4yNTIuOTc1IDE1LjY5NyAwIDEyLjE2NSAwIDkuNjY3IDAgNy41ODkuNjU0IDYuMTA0IDEuODcyIDQuNTYgMy4xNDcgMy43NTcgNC45OTIgMy43NTcgNy4yMThjMCA0LjAzOSAyLjQ2NyA1Ljc2IDYuNDc2IDcuMjE5IDIuNTg1LjkyIDMuNDQ1IDEuNTc0IDMuNDQ1IDIuNTgzIDAgLjk4LS44NCAxLjU0NS0yLjM1NCAxLjU0NS0xLjg3NSAwLTQuOTY1LS45MjEtNi45OS0yLjEwOWwtLjkgNS41NTVDNS4xNzUgMjIuOTkgOC4zODUgMjQgMTEuNzE0IDI0YzIuNjQxIDAgNC44NDMtLjYyNCA2LjMyOC0xLjgxMyAxLjY2NC0xLjMwNSAyLjUyNS0zLjIzNiAyLjUyNS01LjczMiAwLTQuMTI4LTIuNTI0LTUuODUxLTYuNTk0LTcuMzA1aC4wMDN6Ii8+PC9zdmc+"
+    },
+    "examples": [
+      "Find the latest payment from Acme.",
+      "List unpaid invoices.",
+      "Show the customer record for jane@example.com."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Stripe",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "stripe",
+    "source_config": {},
+    "agent": {
+      "name": "stripe",
+      "source": "stripe",
+      "tools": [
+        "search_customers",
+        "list_payments",
+        "list_invoices",
+        "get_product",
+        "create_refund"
+      ],
+      "description": "Reads Stripe customers, payments, invoices, and products through Stripe's official hosted MCP server.",
+      "owns": "You own Stripe billing data available to this account. Refunds and other financial mutations require confirmation.",
+      "holds_documents": false,
+      "first_for": "Stripe hosted MCP workflows",
+      "writes": [
+        "create_refund"
+      ]
+    },
+    "tool_descriptions": {
+      "search_customers": "Search Stripe customers.",
+      "list_payments": "List recent payments.",
+      "list_invoices": "List invoices and payment status.",
+      "get_product": "Read a Stripe product.",
+      "create_refund": "Create a refund after confirmation."
+    }
+  }
+}

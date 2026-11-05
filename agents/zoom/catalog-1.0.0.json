@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "id": "zoom",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://zoom.us/mcp/meeting/streamable",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Zoom Meetings",
+    "summary": "Reads and manages Zoom meetings through Zoom's official hosted MCP server.",
+    "categories": [
+      "Meetings",
+      "Scheduling"
+    ],
+    "logo": {
+      "letter": "Z",
+      "color": "#2D8CFF",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Wm9vbTwvdGl0bGU+PHBhdGggZD0iTTUuMDMzIDE0LjY0OUguNzQzYS43NC43NCAwIDAgMS0uNjg2LS40NTguNzQuNzQgMCAwIDEgLjE2LS44MDhMMy4xOSAxMC40MUgxLjA2QTEuMDYgMS4wNiAwIDAgMSAwIDkuMzVoMy45NTdjLjMwMSAwIC41Ny4xOC42ODYuNDU4YS43NC43NCAwIDAgMS0uMTYxLjgwOEwxLjUxIDEzLjU5aDIuNDY0Yy41ODUgMCAxLjA2LjQ3NSAxLjA2IDEuMDZ6TTI0IDExLjMzOGMwLTEuMTQtLjkyNy0yLjA2Ni0yLjA2Ni0yLjA2Ni0uNjEgMC0xLjE1OC4yNjUtMS41MzcuNjg2YTIuMDYxIDIuMDYxIDAgMCAwLTEuNTM2LS42ODZjLTEuMTQgMC0yLjA2Ni45MjYtMi4wNjYgMi4wNjZ2My4zMTFhMS4wNiAxLjA2IDAgMCAwIDEuMDYtMS4wNnYtMi4yNTFhMS4wMDQgMS4wMDQgMCAwIDEgMi4wMTMgMHYyLjI1MWMwIC41ODYuNDc0IDEuMDYgMS4wNiAxLjA2di0zLjMxMWExLjAwNCAxLjAwNCAwIDAgMSAyLjAxMiAwdjIuMjUxYzAgLjU4Ni40NzUgMS4wNiAxLjA2IDEuMDZ6TTE2LjI2NSAxMmEyLjcyOCAyLjcyOCAwIDEgMS01LjQ1NyAwIDIuNzI4IDIuNzI4IDAgMCAxIDUuNDU3IDB6bS0xLjA2IDBhMS42NjkgMS42NjkgMCAxIDAtMy4zMzggMCAxLjY2OSAxLjY2OSAwIDAgMCAzLjMzOCAwem0tNC44MiAwYTIuNzI4IDIuNzI4IDAgMSAxLTUuNDU4IDAgMi43MjggMi43MjggMCAwIDEgNS40NTcgMHptLTEuMDYgMGExLjY2OSAxLjY2OSAwIDEgMC0zLjMzOCAwIDEuNjY5IDEuNjY5IDAgMCAwIDMuMzM4IDB6Ii8+PC9zdmc+"
+    },
+    "examples": [
+      "List my upcoming Zoom meetings.",
+      "Create a Zoom meeting for tomorrow.",
+      "Find the recording for last week's meeting."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Zoom Meetings",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "zoom",
+    "source_config": {},
+    "agent": {
+      "name": "zoom",
+      "source": "zoom",
+      "tools": [
+        "list_meetings",
+        "get_meeting",
+        "create_meeting",
+        "update_meeting",
+        "delete_meeting"
+      ],
+      "description": "Reads and manages Zoom meetings through Zoom's official hosted MCP server.",
+      "owns": "You own Zoom meetings and recordings available through this account. Creating, updating, or deleting meetings requires confirmation.",
+      "holds_documents": false,
+      "first_for": "Zoom Meetings hosted MCP workflows",
+      "writes": [
+        "create_meeting",
+        "update_meeting",
+        "delete_meeting"
+      ]
+    },
+    "tool_descriptions": {
+      "list_meetings": "List upcoming or recent Zoom meetings.",
+      "get_meeting": "Read details for a Zoom meeting.",
+      "create_meeting": "Create a Zoom meeting after confirmation.",
+      "update_meeting": "Update a Zoom meeting after confirmation.",
+      "delete_meeting": "Delete a Zoom meeting after confirmation."
+    }
+  }
+}

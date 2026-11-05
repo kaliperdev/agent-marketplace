@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "id": "calcom",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.cal.com/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Cal.com",
+    "summary": "Schedules and manages Cal.com bookings through the official hosted MCP server.",
+    "categories": [
+      "Scheduling",
+      "Productivity"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#000000",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2FsLmNvbTwvdGl0bGU+PHBhdGggZD0iTTIuNDA4IDE0LjQ4OEMxLjAzNSAxNC40ODggMCAxMy40IDAgMTIuMDU4YzAtMS4zNDYuOTgyLTIuNDQzIDIuNDA4LTIuNDQzLjc1OCAwIDEuMjgyLjIzMyAxLjY5MS43NjVsLS42Ni41NWExLjM0MyAxLjM0MyAwIDAgMC0xLjAzLS40NDJjLS45MyAwLTEuNDQuNzExLTEuNDQgMS41NyAwIC44Ni41NTkgMS41NTcgMS40NCAxLjU1Ny40MTMgMCAuNzY1LS4xNDcgMS4wNDMtLjQ0M2wuNjUxLjU3M2MtLjM5MS41MS0uOTI5Ljc0My0xLjY5NS43NDN6TTYuOTQ4IDEwLjkxM2guODl2My40OWgtLjg5di0uNTFjLS4xODUuMzYyLS40OTMuNjA0LTEuMDgzLjYwNC0uOTQzIDAtMS42OTUtLjgyLTEuNjk1LTEuODI2IDAtMS4wMDcuNzUyLTEuODI1IDEuNjk1LTEuODI1LjU4NSAwIC44OTguMjQxIDEuMDgzLjYwNHptLjAyNiAxLjc1OGMwLS41NDYtLjM3NC0uOTk4LS45NjQtLjk5OC0uNTY4IDAtLjkzOC40NTctLjkzOC45OTggMCAuNTI4LjM3Ljk5OC45MzguOTk4LjU4NiAwIC45NjQtLjQ1Ni45NjQtLjk5OHpNOC40NjcgOS41MDNoLjg5djQuODk1aC0uODl6TTkuNzUyIDEzLjkzN2EuNTMuNTMgMCAwIDEgLjU0Mi0uNTI4Yy4zMTMgMCAuNTMzLjI0Mi41MzMuNTI4YS41MjcuNTI3IDAgMCAxLS41MzMuNTM3LjUzNC41MzQgMCAwIDEtLjU0Mi0uNTM3ek0xNC4yMyAxMy44MzljLS4zMy40MDMtLjgzMi42NTgtMS40MjYuNjU4YTEuODA2IDEuODA2IDAgMCAxLTEuODQtMS44MjZjMC0xLjAwNy43NzgtMS44MjUgMS44NC0xLjgyNS41NzIgMCAxLjA3LjI0MSAxLjQuNjIybC0uNjg3LjU3N2MtLjE3Mi0uMjE1LS4zOTYtLjM3Ni0uNzEzLS4zNzYtLjU2OCAwLS45MzguNDU2LS45MzguOTk4IDAgLjU0MS4zNy45OTcuOTM4Ljk5Ny4zNDMgMCAuNTgtLjE3OS43NTctLjQyek0xNC4zMDUgMTIuNjcxYzAtMS4wMDcuNzgtMS44MjUgMS44NC0xLjgyNSAxLjA2MSAwIDEuODQuODE4IDEuODQgMS44MjUgMCAxLjAwNy0uNzc5IDEuODI2LTEuODQgMS44MjYtMS4wNi0uMDA1LTEuODQtLjgyLTEuODQtMS44MjZ6bTIuNzc4IDBjMC0uNTQ2LS4zNy0uOTk4LS45MzgtLjk5OC0uNTY4LS4wMDQtLjkzNy40NTItLjkzNy45OTggMCAuNTQyLjM3Ljk5OC45MzcuOTk4LjU2OCAwIC45MzgtLjQ1Ni45MzgtLjk5OHpNMjQgMTIuMjY5djIuMTNoLS44OXYtMS45MTFjMC0uNjA0LS4yODEtLjg2NC0uNzA0LS44NjQtLjM5NiAwLS42NzguMTk3LS42NzguODY0djEuOTFoLS44OXYtMS45MWMwLS42MDQtLjI4NS0uODY0LS43MDQtLjg2NC0uMzk2IDAtLjc0NC4xOTctLjc0NC44NjR2MS45MWgtLjg5di0zLjQ5aC44OXYuNDg0Yy4xODUtLjM3Ni41Mi0uNTY0IDEuMDM1LS41NjQuNDg5IDAgLjg5OC4yNDEgMS4xMjMuNjQ5LjIyNC0uNDE3LjU1NC0uNjUgMS4xNTMtLjY1LjczMS4wMDUgMS4yOTkuNTYgMS4yOTkgMS40NDJ6Ii8+PC9zdmc+"
+    },
+    "examples": [
+      "What availability do I have tomorrow?",
+      "Book a 30-minute meeting with Alex.",
+      "List my upcoming bookings."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Cal.com",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "calcom",
+    "source_config": {},
+    "agent": {
+      "name": "calcom",
+      "source": "calcom",
+      "tools": [
+        "list_event_types",
+        "get_availability",
+        "list_bookings",
+        "create_booking",
+        "cancel_booking"
+      ],
+      "description": "Schedules and manages Cal.com bookings through the official hosted MCP server.",
+      "owns": "You own Cal.com scheduling data for this account. Creating or cancelling bookings changes the calendar and requires confirmation.",
+      "holds_documents": false,
+      "first_for": "Cal.com hosted MCP workflows",
+      "writes": [
+        "create_booking",
+        "cancel_booking"
+      ]
+    },
+    "tool_descriptions": {
+      "list_event_types": "List scheduling event types.",
+      "get_availability": "Read available booking slots.",
+      "list_bookings": "List upcoming bookings.",
+      "create_booking": "Create a booking after confirmation.",
+      "cancel_booking": "Cancel a booking after confirmation."
+    }
+  }
+}

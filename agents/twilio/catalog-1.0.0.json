@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "id": "twilio",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.twilio.com/docs",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.5.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Twilio Developer Docs",
+    "summary": "Searches Twilio's official API specifications and developer documentation without executing Twilio API calls.",
+    "categories": [
+      "Developer Tools",
+      "Communications"
+    ],
+    "logo": {
+      "letter": "T",
+      "color": "#F22F46",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+VHdpbGlvPC90aXRsZT48cGF0aCBkPSJNMTIgMEM1LjM4MS0uMDA4LjAwOCA1LjM1MiAwIDExLjk3MVYxMmMwIDYuNjQgNS4zNTkgMTIgMTIgMTIgNi42NCAwIDEyLTUuMzYgMTItMTIgMC02LjY0MS01LjM2LTEyLTEyLTEyem0wIDIwLjgwMWMtNC44NDYuMDE1LTguNzg2LTMuOTA0LTguODAxLTguNzVWMTJjLS4wMTQtNC44NDYgMy45MDQtOC43ODYgOC43NS04LjgwMUgxMmM0Ljg0Ny0uMDE0IDguNzg2IDMuOTA0IDguODAxIDguNzVWMTJjLjAxNSA0Ljg0Ny0zLjkwNCA4Ljc4Ni04Ljc1IDguODAxSDEyem01LjQ0LTExLjc2YzAgMS4zNTktMS4xMiAyLjQ3OS0yLjQ4MSAyLjQ3OS0xLjM2Ni0uMDA3LTIuNDcyLTEuMTEzLTIuNDc5LTIuNDc5IDAtMS4zNjEgMS4xMi0yLjQ4MSAyLjQ3OS0yLjQ4MSAxLjM2MSAwIDIuNDgxIDEuMTIgMi40ODEgMi40ODF6bTAgNS45MTljMCAxLjM2LTEuMTIgMi40OC0yLjQ4MSAyLjQ4LTEuMzY3LS4wMDgtMi40NzMtMS4xMTQtMi40OC0yLjQ4IDAtMS4zNTkgMS4xMi0yLjQ3OSAyLjQ3OS0yLjQ3OSAxLjM2MSAwIDIuNDgxIDEuMTIgMi40ODEgMi40Nzl6bS01LjkxOSAwYzAgMS4zNi0xLjEyIDIuNDgtMi40NzkgMi40OC0xLjM2OC0uMDA3LTIuNDc1LTEuMTEzLTIuNDgxLTIuNDggMC0xLjM1OSAxLjEyLTIuNDc5IDIuNDgxLTIuNDc5IDEuMzU4LS4wMDEgMi40NzkgMS4xMiAyLjQ3OSAyLjQ3OXptMC01LjkxOWMwIDEuMzU5LTEuMTIgMi40NzktMi40NzkgMi40NzktMS4zNjctLjAwNy0yLjQ3NS0xLjExMi0yLjQ4MS0yLjQ3OSAwLTEuMzYxIDEuMTItMi40ODEgMi40ODEtMi40ODEgMS4zNTggMCAyLjQ3OSAxLjEyIDIuNDc5IDIuNDgxeiIvPjwvc3ZnPg=="
+    },
+    "examples": [
+      "How do I send an SMS with Twilio?",
+      "Find the API parameters for creating a phone call.",
+      "Which Twilio API supports Conversation Intelligence?"
+    ]
+  },
+  "connection": {
+    "method": "builtin",
+    "fields": []
+  },
+  "router": {
+    "source": "twilio",
+    "source_config": {},
+    "agent": {
+      "name": "twilio",
+      "source": "twilio",
+      "tools": [
+        "twilio__search",
+        "twilio__retrieve"
+      ],
+      "description": "Searches Twilio's public API specifications, developer documentation, and support articles. This agent explains how to use Twilio APIs but cannot access a Twilio account or send messages, place calls, or change resources.",
+      "owns": "You own Twilio's public developer documentation and API specifications. You can search documentation and retrieve the schemas for matching API operations. You cannot access a customer's Twilio account, read private data, send messages, place calls, purchase numbers, or modify resources. When answering, link to the relevant Twilio documentation page when available.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "twilio__search": "Searches Twilio API operations, documentation articles, and identifiers using a natural-language query and returns ranked results.",
+      "twilio__retrieve": "Retrieves complete parameter and response schemas for one or more Twilio API identifiers returned by twilio__search."
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "id": "mongodb-atlas",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.mongodb.com",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "MongoDB Atlas",
+    "summary": "Reads MongoDB Atlas collections and documents through MongoDB's official hosted MCP server.",
+    "categories": [
+      "Database"
+    ],
+    "logo": {
+      "letter": "M",
+      "color": "#001E2B",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+TW9uZ29EQjwvdGl0bGU+PHBhdGggZD0iTTE3LjE5MyA5LjU1NWMtMS4yNjQtNS41OC00LjI1Mi03LjQxNC00LjU3My04LjExNS0uMjgtLjM5NC0uNTMtLjk1NC0uNzM1LTEuNDQtLjAzNi40OTUtLjA1NS42ODUtLjUyMyAxLjE4NC0uNzIzLjU2Ni00LjQzOCAzLjY4Mi00Ljc0IDEwLjAyLS4yODIgNS45MTIgNC4yNyA5LjQzNSA0Ljg4OCA5Ljg4NGwuMDcuMDVBNzMuNDkgNzMuNDkgMCAwMTExLjkxIDI0aC40ODFjLjExNC0xLjAzMi4yODQtMi4wNTYuNTEtMy4wNy40MTctLjI5Ni42MDQtLjQ2My44NS0uNjkzYTExLjM0MiAxMS4zNDIgMCAwMDMuNjM5LTguNDY0Yy4wMS0uODE0LS4xMDMtMS42NjItLjE5Ny0yLjIxOHptLTUuMzM2IDguMTk1czAtOC4yOTEuMjc1LTguMjljLjIxMyAwIC40OSAxMC42OTUuNDkgMTAuNjk1LS4zODEtLjA0NS0uNzY1LTEuNzYtLjc2NS0yLjQwNXoiLz48L3N2Zz4="
+    },
+    "examples": [
+      "List my Atlas databases.",
+      "Describe the users collection.",
+      "Find users created this week."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "MongoDB Atlas",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "mongodb-atlas",
+    "source_config": {},
+    "agent": {
+      "name": "mongodb-atlas",
+      "source": "mongodb-atlas",
+      "tools": [
+        "list_databases",
+        "list_collections",
+        "describe_collection",
+        "find_documents"
+      ],
+      "description": "Reads MongoDB Atlas collections and documents through MongoDB's official hosted MCP server.",
+      "owns": "You own MongoDB Atlas data visible to this account. This agent is read-only and cannot insert, update, or delete documents.",
+      "holds_documents": false,
+      "first_for": "MongoDB Atlas hosted MCP workflows"
+    },
+    "tool_descriptions": {
+      "list_databases": "List accessible Atlas databases.",
+      "list_collections": "List collections in a database.",
+      "describe_collection": "Describe a collection schema.",
+      "find_documents": "Find documents using a read-only query."
+    }
+  }
+}

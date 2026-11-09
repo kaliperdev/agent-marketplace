@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "id": "railway",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.railway.com",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Railway",
+    "summary": "Manages Railway projects, deployments, services, variables, and deployment diagnostics for the signed-in account.",
+    "categories": [
+      "Developer Tools",
+      "Cloud"
+    ],
+    "logo": {
+      "letter": "R",
+      "color": "#000000",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+UmFpbHdheTwvdGl0bGU+PHBhdGggZD0iTS4xMTMgMTAuMjdBMTMuMDI2IDEzLjAyNiAwIDAwMCAxMS40OGgxOC4yM2MtLjA2NC0uMTI1LS4xNS0uMjM3LS4yMzUtLjM0Ny0zLjExNy00LjAyNy00Ljc5My0zLjY3Ny03LjE5LTMuNzgtLjgtLjAzNC0xLjM0LS4wNDgtNC41MjQtLjA0OC0xLjcwNCAwLTMuNTU1LjAwNS01LjM1OC4wMS0uMjM0LjYzLS40NTkgMS4yNC0uNTY3IDEuNzM3aDkuMzQydjEuMjE2SC4xMTN2LjAwMnptMTguMjYgMi40MjZILjAwOWMuMDIuMzI2LjA1LjY0NS4wOTQuOTYxaDE2Ljk1NWMuNzU0IDAgMS4xNzktLjQyOSAxLjMxNS0uOTZ6bS0xNy4zMTggNC4yOHMyLjgxIDYuOTAyIDEwLjkzIDcuMDI0YzQuODU1IDAgOS4wMjctMi44ODMgMTAuOTItNy4wMjRIMS4wNTZ6TTExLjk4OCAwQzcuNSAwIDMuNTkzIDIuNDY2IDEuNTMxIDYuMTA4bDQuNzUtLjAwNXYtLjAwMmMzLjcxIDAgMy44NDkuMDE2IDQuNTczLjA0N2wuNDQ4LjAxNmMxLjU2My4wNTIgMy40ODUuMjIgNC45OTYgMS4zNjQuODIuNjIxIDIuMDA3IDEuOTkgMi43MTIgMi45NjUuNjU0LjkwMi44NDIgMS45NC4zOTYgMi45MzQtLjQwOC45MTQtMS4yODkgMS40NTgtMi4zNTMgMS40NThILjM5MXMuMDk5LjQyLjI0OS44ODZoMjIuNzQ4QTEyLjAyNiAxMi4wMjYgMCAwMDI0IDEyLjAwNUMyNCA1LjM3NyAxOC42MjEgMCAxMS45ODggMHoiLz48L3N2Zz4="
+    },
+    "examples": [
+      "List my Railway projects.",
+      "What is failing in the latest deployment?",
+      "Show the environment variables for staging."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Railway",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "railway",
+    "source_config": {},
+    "agent": {
+      "name": "railway",
+      "source": "railway",
+      "tools": [
+        "whoami",
+        "list_projects",
+        "list_services",
+        "list_deployments",
+        "get_deployment_logs",
+        "redeploy"
+      ],
+      "description": "Manages Railway projects, deployments, services, variables, and deployment diagnostics for the signed-in account.",
+      "owns": "You own Railway infrastructure visible to this account. Read deployment state before proposing changes. Redeployments change Railway and require confirmation.",
+      "holds_documents": false,
+      "first_for": "Railway hosted MCP workflows",
+      "writes": [
+        "redeploy"
+      ]
+    },
+    "tool_descriptions": {
+      "whoami": "Identify the signed-in Railway account.",
+      "list_projects": "List projects available to the signed-in account.",
+      "list_services": "List services in a Railway project.",
+      "list_deployments": "List recent deployments for a Railway service.",
+      "get_deployment_logs": "Read logs from a Railway deployment.",
+      "redeploy": "Redeploy a Railway service after confirmation."
+    }
+  }
+}

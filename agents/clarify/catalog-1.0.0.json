@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "id": "clarify",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.clarify.ai/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Clarify",
+    "summary": "Reads Clarify CRM records, meetings, lists, campaigns, and pipeline analytics.",
+    "categories": [
+      "CRM"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#101626",
+      "image": "data:image/png;base64,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"
+    },
+    "examples": [
+      "Which deals moved this week?",
+      "Summarize our meetings with Acme.",
+      "What is our win rate over the last 90 days?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Clarify",
+    "note": "Sign in with the Clarify account for the organization you want to connect, then choose that organization on the authorization screen.",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "clarify",
+    "source_config": {},
+    "agent": {
+      "name": "clarify",
+      "source": "clarify",
+      "tools": [
+        "get-current-user",
+        "get-schema",
+        "query-data",
+        "query-analytics",
+        "get-records",
+        "get-lists",
+        "get-campaigns"
+      ],
+      "description": "Reads the signed-in Clarify workspace's CRM records, meetings, campaigns, and historical analytics. This catalog exposes only read tools.",
+      "owns": "You own Clarify CRM records visible to the signed-in user. Use get-schema to discover entities, query-data or query-analytics for searches, and get-records for full details. You cannot create or update records in this catalog. Include Clarify record links when available. You do not own other CRMs.",
+      "holds_documents": false
+    },
+    "tool_descriptions": {
+      "get-current-user": "Get the signed-in user's profile, timezone, and current local time.",
+      "get-schema": "Inspect Clarify's built-in and custom entity schema before querying records.",
+      "query-data": "Search and analyze companies, people, deals, meetings, tasks, users, and comments.",
+      "query-analytics": "Query historical analytics and metrics with read-only SQL.",
+      "get-records": "Read full records by ID, including relationships and AI summaries.",
+      "get-lists": "Browse saved lists for an entity type or read a list by ID.",
+      "get-campaigns": "List campaigns or read a campaign by ID."
+    }
+  }
+}

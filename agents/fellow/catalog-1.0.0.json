@@ -1,0 +1,73 @@
+{
+  "format": 1,
+  "id": "fellow",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://fellow.app/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Fellow",
+    "summary": "Searches the signed-in workspace's meetings, transcripts, agendas, and action items.",
+    "categories": [
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "F",
+      "color": "#FFFFFF",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAAIVBMVEVMaXEnMjcnMjgnMjgoNDgoMzgnMjgnMzggNkAnMjcnMjidVsQiAAAACnRSTlMA5nqZPCBcwxCv0ayCRwAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAAdpJREFUeNqtV9m2gzAIlCWA/v8HX1urZgFLem4ePRnZBpgsy+xhQdoPlnmkwnYemoVu9eEZLG7tkTzUqMNOWDbtsZDGFuixj17bXhNEkXdJbMTGhpmu22+wjtigzoaVHfTyfH53KgK9AcliS+sh+cnysdJdfBmmJLYPTl+Gf8S+r9GP2BcDe8Pgs7K4RKBcfbtcgZIMX8kyHad8XOPmf5Kh/h1Y7bWGo6e5dTt3cwaOLLM9R7x6nw+z+0hwKlXxF6p/cxPtu2Xg0es6Mq6T/OEuP3hNg0PKDe0HvzmYa3LVBxvCByF3IQla/3uIGbLWY0FvVtjtm4VgbHPITlZKmGxpb5NDF/5PsOc2ti7GbqNXZlStjMQJG0vFJAET4GGK8LkTwfysaERPoHIP/uDv5DcGHHT6KAAIGmdsDL5659ri6nPfaUmDz5BhcIhazyhPyJRBPNwVZ9i2sMr+Lb5Wbr/6EtvV2daxYVuH7YoEuaXer2H25IQuqc0M7QB43FToKSX5EQtLekOiL9HaSDSLhWXwmpYkdpRuGsjUSGaV71BPZh0tsZ4KAS3UmY6uPFpTZNet8viWkLQm/S5jprA8sNfyT4fe66kHD2fk3ZJQQSrL7GFaVff3Hdss9A9WDTgdlwzA0AAAAABJRU5ErkJggg=="
+    },
+    "examples": [
+      "What decisions came out of yesterday's project meeting?",
+      "Find my open action items from this week.",
+      "Summarize the transcript from the roadmap review."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Fellow",
+    "note": "Before signing in, ask a Fellow workspace admin to enable MCP connections under Workspace Settings > Fellow MCP. Use an account that can see the intended meetings.",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "fellow",
+    "source_config": {},
+    "agent": {
+      "name": "fellow",
+      "source": "fellow",
+      "tools": [
+        "search_meetings",
+        "get_meeting_summary",
+        "get_meeting_transcript",
+        "get_meeting_participants",
+        "get_action_items",
+        "list_channels",
+        "get_channel_details",
+        "read_agenda",
+        "search_agenda_templates",
+        "get_agenda_template"
+      ],
+      "description": "Reads the meeting notes, transcripts, agendas, action items and channels visible to the signed-in Fellow user. Requires the Fellow workspace admin to enable MCP connections.",
+      "owns": "You own Fellow meeting context the signed-in user is allowed to see. Search meetings first, then fetch the summary or transcript for a specific meeting. You can read action items and agendas but cannot edit them. Include a source link when Fellow provides one. You do not own other meeting apps.",
+      "holds_documents": true
+    },
+    "tool_descriptions": {
+      "search_meetings": "Search meetings by title, notes, transcript, participants, dates, or channel.",
+      "get_meeting_summary": "Fetch the AI-generated summary for a specific meeting.",
+      "get_meeting_transcript": "Fetch a meeting transcript, optionally for a recording or time range.",
+      "get_meeting_participants": "List the participants of a meeting.",
+      "get_action_items": "Search and filter action items by status, assignee, and dates.",
+      "list_channels": "List channels in the signed-in Fellow workspace.",
+      "get_channel_details": "Get the name, description, and type of a Fellow channel.",
+      "read_agenda": "Read the agenda of a meeting.",
+      "search_agenda_templates": "Search agenda templates by title.",
+      "get_agenda_template": "Read a specific agenda template."
+    }
+  }
+}

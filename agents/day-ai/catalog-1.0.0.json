@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "id": "day-ai",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://day.ai/api/mcp",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Day AI",
+    "summary": "Reads Day AI CRM records, meeting transcripts, pages, and campaign details.",
+    "categories": [
+      "CRM"
+    ],
+    "logo": {
+      "letter": "D",
+      "color": "#FFFFFF",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAE4klEQVR4nN1ZWWwbVRQ9M57Ee2xSh+I0tZ3FILY2KklLm4JEs0MCPyAqFYkfxAeID74QqB9FCISEhIpYJERFP+APqUpKUoekqRCEliYUkEqIKqFAbewstuN4icfjFd3XJqShCE8ytmuONLI9fjNzz313Oe8Nt691dw5lDB5lDh5lDh5lDh5lDh5lDh5lDqFQN+Y4bvUbgGuVOpfL3ToEeJ6HSqUCz6ugUvHsNx3c9fNarRZarY4RyWazSIgi4vE4MtkMspkMMpkMUqk0Mpn0lojJJkBG6vV62OwOOJ13oanJiZqa22EwGKDT65nhlZVqNm4j0uk0RDGOSDgMv38Rly79gMnJC4hGopCkBCMlF5zcTmw2m3Hs9bdgd9SvC5PNQxRF/PH7LE5++gk8nqtIJBKyZkRWEpNXd9rsihlPoBm7+5578cabb+PFl16GyWS+6ewpQoBi22ZzKGb8eqjVGrS1PYTXjh6DyWTK+xmyCdjtDhQKHMfB6bwTzz3/AjQaTSEICLDZ7SgkOI5DS8teOBwNeYWS7BkwGqtQaKjVajz51NOsmilLQFBBp9OhGLA76lFRUaEsAUElsOZUDJhMZjbjihGg2DQYjGx6iwEVGc8p2IlZBXLkV0KpEVFXJQlBoGvWpEae5VEU48hdv145AutKKBmZSiVZ56QjvLyMSDSClVgMsVgMKysxSJLESAiUO3oDzObbYLFYUFu7A1VVJgjCvz/e7/cjnc4oR4A8t337HVhYmMfcnA+LCwvwej3weDyYn/cxSSAlJCSTEvP+zeQAGazT6WG1WtHR1YMDBw5Crzf8YxxdOzX5PZKppHIESIh9eXoA4fAyotEom2I6Jwc0PhIJs4OIp1MptHd0o7Ky8oZxy6EQRr9ysf8VS2J6+MzMNHw+L6LRiGzjNyIeX8H4+BibuY3PcZ0ZQjgczkvUlXRFptVowfN/JzUZfOXKDEZGhll+5YOSEdBotGjv6GKfq6Dc+ujD9xCLRfOW1CUhQMm8f38b9jzQstZt53w+HH/3HSzMz6+V37zuhSKDGmHr3gdx5Jlnma7K5bLwuN344P3jmJ39TXZuFZUAGdzV3Yu+/ifYyi6dTuPX6cs4ceJjzPm8myoMQrFCpm6nDYcPH8Gu3c1MT1GzGx114czQIEKhkKywueHeKCA4jmee7uzqwaH2TlgsNey8230Vn392EtO/XGZltKi7Evl2bQqX1tZ9ePSxfuyoq2NLRpIb5PXxs6MIBgNb7iWKEyCxZqy6ZnhPbx+s1lq2aKf9oMmLX2Nw4BS83j/ZFopSm1yCIjcRBBYejxzqQNvBh1FdvY2taanbTk1dxMCpL+B2u5n82GysF2RnjoRYfUMj+vofR0ODE0ajERUVAiLhCM5/9y2GhwaxuLjI4jyblb9ppTgBim3afau11qKzuxfNzXuYuiRvkwIlpTriGmJej0Wja3K6kBDyMZo8TWsBqib33b+Ltf/VldnSUhATE9/ANXwaodASRDGBFFORxXn1JvzXAPLuK68eRWNj09ouQSDgx4XzExgbdTGvJxISE1+F9vamCLAE3WZBMBjEzz/9iHPnxhAM+CFJyZIZLWtzl5aS1dXVLBGTySSr3aU2WtYMUHIGAoGCvJxQAnnJ6VvV+P/FOzIeZQ4eZQ4eZQ4eZQ6+1AZsFX8BmMQQ4hBqpnMAAAAASUVORK5CYII="
+    },
+    "examples": [
+      "What changed in the Acme opportunity?",
+      "Summarize our latest meeting with Acme.",
+      "Which campaigns are active?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Day AI",
+    "note": "Day AI MCP requires the paid Agent tier. Sign in, then choose the workspace and agent whose read-only data you want Rytangle to access.",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "day-ai",
+    "source_config": {},
+    "agent": {
+      "name": "day-ai",
+      "source": "day-ai",
+      "tools": [
+        "search_objects",
+        "read_crm_schema",
+        "read_object_history",
+        "read_property_history",
+        "get_meeting_recording_context",
+        "get_context_for_meeting_recording_citations",
+        "read_meeting_comments",
+        "read_page",
+        "read_page_comments",
+        "list_campaigns",
+        "get_campaign_details",
+        "read_folder"
+      ],
+      "description": "Read-only access to Day AI CRM records, meetings, pages, and campaigns available to the signed-in workspace and agent tier. A paid Day AI Agent tier is required.",
+      "owns": "You own Day AI workspace CRM records, meetings, pages, and campaigns visible to the signed-in user. Use read_crm_schema before searching unfamiliar objects. Read-only tools only; do not create, update, or send anything. Include record links or transcript citations when available.",
+      "holds_documents": false
+    },
+    "tool_descriptions": {
+      "search_objects": "Search contacts, companies, opportunities, meetings, emails, pages, and other CRM objects.",
+      "read_crm_schema": "Read object properties, valid values, and relationship schemas.",
+      "read_object_history": "Read the change history of a CRM record.",
+      "read_property_history": "Read the change history of a property across records.",
+      "get_meeting_recording_context": "Read meeting metadata, summaries, notes, and transcript.",
+      "get_context_for_meeting_recording_citations": "Find transcript excerpts with exact citations for a question.",
+      "read_meeting_comments": "Read comment threads attached to a meeting recording.",
+      "read_page": "Read a page by object ID in paginated chunks.",
+      "read_page_comments": "Read comment threads on a page.",
+      "list_campaigns": "List campaigns in the workspace.",
+      "get_campaign_details": "Read a campaign's details and status.",
+      "read_folder": "List the subfolders and pages inside a folder."
+    }
+  }
+}

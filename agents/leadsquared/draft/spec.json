@@ -1,0 +1,121 @@
+{
+  "document_type": "mcp-agent-draft-spec",
+  "draft": {
+    "id": "leadsquared",
+    "status": "blocked_pending_probe",
+    "publishable": false,
+    "blockers": [
+      "No authorized LeadSquared test account is available.",
+      "The authenticated MCP tool list and tool schemas have not been observed.",
+      "OAuth tenant compatibility, granted permissions, and revocation have not been tested."
+    ]
+  },
+  "service": {
+    "kind": "vendor_hosted_remote_mcp",
+    "endpoint": "https://mcp-server.pulseai-in21.leadsquared.com/mcp/v1",
+    "endpoint_source": "https://help.leadsquared.com/connect-leadsquared-crm-to-claude/",
+    "transport": "HTTP; the vendor documents this URL with Claude's HTTP MCP connection option.",
+    "region_note": "The vendor help article publishes this exact endpoint. Its hostname contains pulseai-in21; compatibility with a particular customer's tenant or region has not been probed. Do not substitute a regional LeadSquared REST API host."
+  },
+  "authentication": {
+    "method": "OAuth 2.1 with PKCE",
+    "interaction": "Complete the LeadSquared browser login and grant the permissions requested by the connector.",
+    "credential_handling_source_claims": [
+      "LeadSquared says credentials are used to establish a session and are not stored by the client or connector.",
+      "LeadSquared says the connector receives a short-lived session token, encrypted at rest, and that the client does not see that token."
+    ],
+    "oauth_metadata_status": "Unprobed. Do not invent issuer, authorization, token, registration, redirect, or scope values.",
+    "static_api_keys": "Not part of this MCP draft. LeadSquared REST API access-key and secret-key authentication is a separate interface; do not place those keys in this spec."
+  },
+  "access_policy": {
+    "intended_mode": "read_only",
+    "enforcement_boundary": "The agent allowlist must contain only individually verified, retrieval-only MCP tools. OAuth login alone does not establish a read-only boundary; use an account with the least permissions available and keep all non-read or ambiguous tools out of the agent.",
+    "tool_allowlist": [],
+    "tool_inventory_status": "not_probed",
+    "exclude_if_tool_can": [
+      "create, capture, or upsert records",
+      "update, merge, invalidate, or delete records",
+      "create, update, complete, reschedule, or delete tasks or activities",
+      "change permissions, preferences, configuration, or other state",
+      "perform any action whose effects cannot be established from its exact schema and vendor documentation"
+    ],
+    "classification_rule": "Do not infer MCP tool identifiers from labels in LeadSquared's help article or from REST API operation names. Record identifiers and schemas only from the authenticated server tools/list response."
+  },
+  "probe_gate": {
+    "status": "not_run_blocked_no_test_account",
+    "endpoint_under_test": "https://mcp-server.pulseai-in21.leadsquared.com/mcp/v1",
+    "required_order": [
+      {
+        "step": 1,
+        "name": "authorized_tenant_and_user",
+        "requirement": "Obtain an authorized non-production LeadSquared tenant, a user with the least available permissions, and synthetic records approved for read testing. Record tenant region and user role without recording credentials or customer data."
+      },
+      {
+        "step": 2,
+        "name": "oauth_pkce_connection",
+        "requirement": "Connect to the exact endpoint over HTTP with an MCP-compatible client. Follow only the OAuth challenge and metadata advertised by the server; complete the browser PKCE login and consent flow. Record the observed issuer, requested/granted scopes, redirect behavior, client registration behavior, and revocation path. Redact tokens and secrets. Stop if the consent or permission boundary is unclear."
+      },
+      {
+        "step": 3,
+        "name": "initialize_and_tools_list",
+        "requirement": "After authentication, capture the MCP initialize response, then request tools/list and follow every nextCursor until pagination ends. Save the raw, redacted response with timestamp, endpoint, client, and tenant region. Do not call any tool during inventory."
+      },
+      {
+        "step": 4,
+        "name": "per_tool_read_only_review",
+        "requirement": "For every candidate tool, preserve the exact server-provided name, title, description, input schema, output schema if present, and annotations. Map its behavior to first-party documentation or an observed implementation contract. Add only tools proven to retrieve data without changing CRM state. Treat missing, broad, conflicting, or ambiguous evidence as a rejection."
+      },
+      {
+        "step": 5,
+        "name": "approved_read_smoke_call",
+        "requirement": "Call only a tool that passed step 4, using a known synthetic record. Save the redacted request and response and confirm the target record and related state are unchanged. Never probe a suspected write tool, even with dummy input."
+      },
+      {
+        "step": 6,
+        "name": "revoke_and_record",
+        "requirement": "Disconnect through the documented client integration settings, confirm subsequent access is rejected or requires re-authentication, and record the result."
+      }
+    ],
+    "pass_criteria": [
+      "The exact published endpoint completes OAuth 2.1 with PKCE for the intended tenant and user.",
+      "The complete authenticated tools/list response and schemas are captured; every paginated result is reviewed.",
+      "Each allowlisted tool is individually proven retrieval-only; no unknown or mutating tool is allowlisted.",
+      "An approved synthetic read succeeds and leaves CRM state unchanged.",
+      "Disconnect/revocation behavior is observed and documented.",
+      "The draft JSON is updated with exact observed tool identifiers and evidence, while remaining outside the publishable catalog until separately reviewed."
+    ],
+    "fail_criteria": [
+      "No test account, failed or ambiguous OAuth, tenant/region incompatibility, or unclear consent.",
+      "Incomplete tool listing, missing schemas, undocumented behavior, or any candidate whose effects are ambiguous.",
+      "Any need to call a potentially mutating tool to discover its behavior.",
+      "A read smoke call changes CRM state or cannot be safely isolated to synthetic data."
+    ]
+  },
+  "sources": [
+    {
+      "title": "Connect LeadSquared CRM to Claude",
+      "url": "https://help.leadsquared.com/connect-leadsquared-crm-to-claude/",
+      "accessed": "2026-11-17",
+      "supports": "Published MCP endpoint, HTTP client setup, OAuth 2.1 with PKCE, connector security claims, user-role behavior, and the fact that the connector includes both read and write actions."
+    },
+    {
+      "title": "LeadSquared API Host",
+      "url": "https://apidocs.leadsquared.com/api-host/",
+      "accessed": "2026-11-17",
+      "supports": "REST API hosts vary by account region; this does not establish regional behavior for the published MCP endpoint."
+    },
+    {
+      "title": "LeadSquared API Authentication",
+      "url": "https://apidocs.leadsquared.com/authentication/",
+      "accessed": "2026-11-17",
+      "supports": "LeadSquared REST API access-key and secret-key authentication, documented separately from the MCP OAuth flow."
+    }
+  ],
+  "display": {
+    "logo": {
+      "image": "data:image/png;base64,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",
+      "color": "#FFFFFF",
+      "source": "https://help.leadsquared.com/wp-content/uploads/2026/08/help-center-logo.webp"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "format": 1,
+  "id": "outreach",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://api.outreach.io/mcp/",
+    "timeout_seconds": 60
+  },
+  "needs_router": "0.6.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Outreach",
+    "summary": "Searches Outreach accounts, prospects, opportunities, tasks, email activity, and Kaia meetings.",
+    "categories": [
+      "CRM",
+      "Meetings"
+    ],
+    "logo": {
+      "letter": "O",
+      "color": "#FFFFFF",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAJwSURBVHgB7VddbtNAEP7GqsTPU47gG5DeoJwAhx/RRkgJJ2huQHyC9Aa4EiogIWJOUPcEmBNgbsAbFVJ2mHFs4wZ7vSZpX9pPsjquZ2e+2Z2fDXDbQV0Kr57zwcrgiYg+GENZMGB5aiqZPD/FUpbLhAteIf0QUwYHNBIIAh489HAsDmcbzvogI0LieTh994kSuBLQiM0Kyy0ct5EJzz5TBBuBo2c8gUGEa4I4Sw1jVD+eisBhwL5H+LrjyJuQkZA4iynVF69iQnh7A84VPhOWmmcVgUM5d/lzgJuDL0k+U2EvZ2Ew4V7rkcjhfSEj5SdgT3ZOSlTEibMFzkt7vle8DB2XZcx4LUmUNH2UPJpL2S1EJ+gyJAHnPssc8NENdf64zblCs1tKbSTWT+EIr2DTmXySOKFrd7uH9fnaoCVZEXDBpUHsqhvFpLmR2XQM8KNOwKqsiNdGdwdaB+QVL2mXflm3LtCmhq68MlJJ+JsD39CBBx6mcATpILN9J0RlPnl1NlYwjl12IY+e7UloDMJSzgkUpZXBDu1eC5vCOOChRHdu06lHXxFQSJl11q70genRiM/HL/hK49KdGT/lN1g792026tHnhEphKkZ+E773GEhZ8QxIB4zDOpmCoUzBeSMBxcuAZzKSF7gepO+XtL/5zyuN6GNMJ4BDQvaHtvFR04d/OqEOGwJ22nRo4xZkJaCKpoXt/0ADKm8/TgQKEokuxBbQXSymZ9Sh1w6ta70+wW1c11GO7qxL0ToNdevUkIhO872IOvzF2N/qh0kTtMVKF5vLgkflbaYGPbKLS+Ck79R0JlCHdr77ReNxjfQObfgD7rHxmTdwXQAAAAAASUVORK5CYII="
+    },
+    "examples": [
+      "What is the status of the Acme opportunity?",
+      "Find recent Kaia meetings with Contoso.",
+      "Which tasks are due for my accounts?"
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Outreach",
+    "note": "Before signing in, ask an Outreach admin to enable MCP Server under Administration > Organization > Org info > Gen AI. The organization needs Amplify access and your user needs a licensed seat.",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "outreach",
+    "source_config": {},
+    "agent": {
+      "name": "outreach",
+      "source": "outreach",
+      "tools": [
+        "current_user",
+        "current_org",
+        "account_search",
+        "account_get_by_id",
+        "prospect_search",
+        "prospect_get_by_id",
+        "opportunity_search",
+        "opportunity_get_by_id",
+        "task_search",
+        "call_search",
+        "kaia_meeting_search",
+        "kaia_meeting_fetch",
+        "emails_search",
+        "filter_schema_fetch",
+        "input_fields_fetch"
+      ],
+      "description": "Reads Outreach sales engagement records and Kaia meeting context for the signed-in user. Outreach MCP access may require the vendor's Amplify package and administrator enablement.",
+      "owns": "You own Outreach accounts, prospects, opportunities, tasks, call and email activity, and Kaia meetings the signed-in user can see. Search first and fetch matching records by ID. This catalog exposes only read tools and cannot enroll prospects, send messages, update records, or delete data. Link to Outreach records when available.",
+      "holds_documents": false
+    },
+    "tool_descriptions": {
+      "current_user": "Get the authenticated Outreach user's ID and email.",
+      "current_org": "Get the authenticated Outreach organization.",
+      "account_search": "Find accounts by name, owner, or filters.",
+      "account_get_by_id": "Fetch a single account's full record by ID.",
+      "prospect_search": "Find prospects by name, account, owner, or filters.",
+      "prospect_get_by_id": "Fetch a single prospect's full record by ID.",
+      "opportunity_search": "Find opportunities by stage, status, account, or filters.",
+      "opportunity_get_by_id": "Fetch a single opportunity's full record by ID.",
+      "task_search": "Find tasks using supported filters.",
+      "call_search": "Find call logs using supported filters.",
+      "kaia_meeting_search": "Search recorded Kaia meetings and transcripts.",
+      "kaia_meeting_fetch": "Fetch a Kaia meeting summary or transcript by instance ID.",
+      "emails_search": "Find emails by account or opportunity.",
+      "filter_schema_fetch": "Fetch the complete filter schema for a supported entity type.",
+      "input_fields_fetch": "Discover required and optional fields for Outreach records."
+    }
+  }
+}

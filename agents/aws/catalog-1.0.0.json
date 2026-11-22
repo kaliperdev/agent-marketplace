@@ -1,0 +1,58 @@
+{
+  "format": 1,
+  "id": "aws",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://aws-mcp.us-east-1.api.aws/mcp",
+    "timeout_seconds": 120,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "AWS",
+    "summary": "Searches AWS documentation and inspects AWS account and service information through Amazon's managed MCP server.",
+    "categories": ["Cloud", "Developer Tools", "Database", "Analytics"],
+    "logo": {"letter": "A", "color": "#232F3E"},
+    "examples": [
+      "Find the AWS documentation for Lambda response streaming.",
+      "Which AWS regions support this service?",
+      "Inspect the current status of my AWS resources."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "AWS",
+    "signin": {"client": "automatic"},
+    "fields": []
+  },
+  "router": {
+    "source": "aws",
+    "source_config": {},
+    "agent": {
+      "name": "aws",
+      "source": "aws",
+      "tools": [
+        "aws___search_documentation",
+        "aws___read_documentation",
+        "aws___list_regions",
+        "aws___check_service_availability",
+        "aws___retrieve_skill",
+        "aws___get_account_information"
+      ],
+      "description": "Searches AWS documentation and reads AWS account, service, and region information through the managed AWS MCP server.",
+      "owns": "You own AWS documentation and AWS account information available to the signed-in IAM identity. Start with read-only inspection. Do not create, update, delete, deploy, or change AWS resources through this catalog.",
+      "holds_documents": false,
+      "first_for": "AWS documentation, regions, service availability, and account inspection"
+    },
+    "tool_descriptions": {
+      "aws___search_documentation": "Search current AWS documentation and return relevant official pages.",
+      "aws___read_documentation": "Read an AWS documentation page or reference returned by search.",
+      "aws___list_regions": "List AWS regions and their availability information.",
+      "aws___check_service_availability": "Check whether an AWS service or feature is available in a region.",
+      "aws___retrieve_skill": "Retrieve an AWS agent skill or recommended workflow.",
+      "aws___get_account_information": "Read account and identity information visible to the signed-in IAM identity."
+    }
+  }
+}

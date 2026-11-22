@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "id": "dropbox",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.dropbox.com/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Dropbox",
+    "summary": "Searches and reads Dropbox files through Dropbox's official hosted MCP server.",
+    "categories": [
+      "Documents",
+      "Files"
+    ],
+    "logo": {
+      "letter": "D",
+      "color": "#0061FF",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+RHJvcGJveDwvdGl0bGU+PHBhdGggZD0iTTYgMS44MDdMMCA1LjYyOWw2IDMuODIyIDYuMDAxLTMuODIyTDYgMS44MDd6TTE4IDEuODA3bC02IDMuODIyIDYgMy44MjIgNi0zLjgyMi02LTMuODIyek0wIDEzLjI3NGw2IDMuODIyIDYuMDAxLTMuODIyTDYgOS40NTJsLTYgMy44MjJ6TTE4IDkuNDUybC02IDMuODIyIDYgMy44MjIgNi0zLjgyMi02LTMuODIyek02IDE4LjM3MWw2LjAwMSAzLjgyMiA2LTMuODIyLTYtMy44MjJMNiAxOC4zNzF6Ii8+PC9zdmc+"
+    },
+    "examples": [
+      "Find the latest project brief in Dropbox.",
+      "Search my Dropbox for Q4 planning documents.",
+      "Summarize the selected PDF."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Dropbox",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "dropbox",
+    "source_config": {},
+    "agent": {
+      "name": "dropbox",
+      "source": "dropbox",
+      "tools": [
+        "search_files",
+        "list_folder",
+        "get_file_metadata",
+        "download_file"
+      ],
+      "description": "Searches and reads Dropbox files through Dropbox's official hosted MCP server.",
+      "owns": "You own Dropbox files and folders authorized for this account. This agent does not delete or modify files.",
+      "holds_documents": true,
+      "first_for": "Dropbox hosted MCP workflows"
+    },
+    "tool_descriptions": {
+      "search_files": "Search Dropbox files by name or content.",
+      "list_folder": "List files in a Dropbox folder.",
+      "get_file_metadata": "Read file metadata.",
+      "download_file": "Read a Dropbox file for analysis."
+    }
+  }
+}

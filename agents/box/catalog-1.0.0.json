@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "id": "box",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.box.com",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "Box",
+    "summary": "Searches and reads Box files through Box's official hosted MCP server.",
+    "categories": [
+      "Documents",
+      "Files"
+    ],
+    "logo": {
+      "letter": "B",
+      "color": "#0061D5",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Qm94PC90aXRsZT48cGF0aCBkPSJNLjk1OSA1LjUyM2MtLjU0IDAtLjk1OS40Mi0uOTU5Ljg5OXY3LjU0OWE0LjU5IDQuNTkgMCAwMDQuNjEzIDQuNDk0IDQuNzE3IDQuNzE3IDAgMDA0LjEzNS0yLjQ1N2MuNzc5IDEuNDM4IDIuMzM3IDIuNDU3IDQuMDc0IDIuNDU3IDIuNTc3IDAgNC42NzQtMi4wMzcgNC42NzQtNC42MTMuMDYtMi40NTctMi4wMzctNC40OTUtNC42MTMtNC40OTUtMS43MzggMC0zLjI5NS45NTktNC4wNzQgMi4zOTctLjc4LTEuNDM4LTIuMzM4LTIuMzk3LTQuMTM1LTIuMzk3LTEuMDc5IDAtMi4wMzguMzYtMi44MTcuODk5VjYuNDIyYS45Mi45MiAwIDAwLS44OTgtLjg5OXpNMTcuNjAyIDkuMjZhLjk1Ljk1IDAgMDAtLjcwNC4xNThjLS4zNi4zLS40NzkuODk5LS4xOCAxLjMxOGwyLjM5NyAzLjExNi0yLjM5NiAzLjExNWMtLjMuNDItLjI0Ljk2LjE4IDEuMjYuNDE5LjMgMS4wMTYuMjk4IDEuMzE2LS4xMjJsMi4wMzktMi42MzYgMi4wOTYgMi42OTdjLjMuMzYuODk5LjQxOSAxLjMxOC4xMi4zNi0uMy40Mi0uODQuMTIxLTEuMjU5bC0yLjMzOC0zLjExNSAyLjMzOC0zLjA1N2MuMy0uNDE5LjI5OC0xLjAxOC0uMTIxLTEuMzE4LS40OC0uMy0xLjAxOS0uMjQtMS4zMTguMThsLTIuMDk2IDIuNTc2LTIuMDQtMi42OTVjLS4xNDktLjE4LS4zNzMtLjMtLjYxMi0uMzM4ek00LjYxMyAxMS4xNTRjMS41NTggMCAyLjgxNyAxLjI2IDIuODE3IDIuNzU4IDAgMS41NTgtMS4yNTkgMi43NTYtMi44MTcgMi43NTYtMS41NTggMC0yLjgxNi0xLjE5OC0yLjgxNi0yLjc1NiAwLTEuNDk4IDEuMjU4LTIuNzU4IDIuODE2LTIuNzU4em04LjI3IDBjMS41NTggMCAyLjgxNiAxLjI2IDIuODE2IDIuNzU4LS4wNiAxLjU1OC0xLjMxOCAyLjc1Ni0yLjgxNiAyLjc1Ni0xLjU1OCAwLTIuODE3LTEuMTk4LTIuODE3LTIuNzU2IDAtMS40OTggMS4yNTktMi43NTggMi44MTctMi43NThaIi8+PC9zdmc+"
+    },
+    "examples": [
+      "Find the customer contract in Box.",
+      "List files in the finance folder.",
+      "Read the latest policy document."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "Box",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "box",
+    "source_config": {},
+    "agent": {
+      "name": "box",
+      "source": "box",
+      "tools": [
+        "search_files",
+        "list_folder",
+        "get_file_metadata",
+        "get_file_content"
+      ],
+      "description": "Searches and reads Box files through Box's official hosted MCP server.",
+      "owns": "You own Box files and folders authorized for this account. This agent does not delete or modify files.",
+      "holds_documents": true,
+      "first_for": "Box hosted MCP workflows"
+    },
+    "tool_descriptions": {
+      "search_files": "Search Box files.",
+      "list_folder": "List files in a Box folder.",
+      "get_file_metadata": "Read file metadata.",
+      "get_file_content": "Read Box file content."
+    }
+  }
+}

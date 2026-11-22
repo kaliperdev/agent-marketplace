@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "id": "clickhouse",
+  "version": "1.0.0",
+  "kind": "mcp",
+  "service": {
+    "url": "https://mcp.clickhouse.cloud/mcp",
+    "timeout_seconds": 60,
+    "max_result_chars": 200000
+  },
+  "needs_router": "0.7.0",
+  "publisher": "Kaliper",
+  "display": {
+    "name": "ClickHouse Cloud",
+    "summary": "Queries ClickHouse Cloud analytics data through the official hosted MCP server.",
+    "categories": [
+      "Database",
+      "Analytics"
+    ],
+    "logo": {
+      "letter": "C",
+      "color": "#FFCC00",
+      "image": "data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+Q2xpY2tIb3VzZTwvdGl0bGU+PHBhdGggZD0iTTIxLjMzMyAxMEgyNHY0aC0yLjY2N1pNMTYgMS4zMzVoMi42Njd2MjEuMzNIMTZabS01LjMzMyAwaDIuNjY2djIxLjMzaC0yLjY2NlpNMCAyMi42NjVWMS4zMzVoMi42Njd2MjEuMzN6bTUuMzMzLTIxLjMzSDh2MjEuMzNINS4zMzNaIi8+PC9zdmc+"
+    },
+    "examples": [
+      "List the available tables.",
+      "What were the top events yesterday?",
+      "Explain the schema for the orders table."
+    ]
+  },
+  "connection": {
+    "method": "signin",
+    "provider": "ClickHouse Cloud",
+    "signin": {
+      "client": "automatic"
+    },
+    "fields": []
+  },
+  "router": {
+    "source": "clickhouse",
+    "source_config": {},
+    "agent": {
+      "name": "clickhouse",
+      "source": "clickhouse",
+      "tools": [
+        "list_databases",
+        "list_tables",
+        "describe_table",
+        "run_select_query"
+      ],
+      "description": "Queries ClickHouse Cloud analytics data through the official hosted MCP server.",
+      "owns": "You own the ClickHouse Cloud data visible to this account. This agent is read-only and cannot modify schemas or data.",
+      "holds_documents": false,
+      "first_for": "ClickHouse Cloud hosted MCP workflows"
+    },
+    "tool_descriptions": {
+      "list_databases": "List accessible ClickHouse databases.",
+      "list_tables": "List tables in a database.",
+      "describe_table": "Describe a table schema.",
+      "run_select_query": "Run a read-only SELECT query."
+    }
+  }
+}

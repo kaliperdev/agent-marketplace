@@ -314,10 +314,12 @@ def test_a_call_with_a_note_may_not_use_an_escaped_name(sql):
     assert fake.requests == []
 
 
-def test_a_call_without_a_note_may_use_a_backslash_in_a_quoted_name():
-    sql = "select 1 from `a\\b.c`"
+@pytest.mark.parametrize("sql", ["select 1 from `a\\b.c`", "SELECT * FROM `region-us`.`INFORMATION\\x5fSCHEMA`.COLUMNS"])
+def test_a_call_without_a_note_may_not_use_an_escaped_name_either(sql):
     fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
-    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
+    text, _ = run(tools(fake)["bq_run_query"], sql, note=None, token=None)
+    assert text == ESCAPED
+    assert not any(r.url.path.endswith("/queries") for r in fake.requests)
 
 
 def test_a_backslash_in_a_string_literal_is_not_an_escaped_name():
@@ -371,8 +373,30 @@ def test_the_scanner_lets_ordinary_queries_through_on_a_call_with_a_note(sql):
     assert asked(sql).startswith("1 row")
 
 
-def test_the_scanner_is_not_applied_to_a_call_without_a_note():
+def test_a_call_without_a_note_is_refused_a_query_that_cannot_be_checked():
     sql = "select 'x"
+    fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
+    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0] == UNCLOSED
+    assert not any(r.url.path.endswith("/queries") for r in fake.requests)
+
+
+@pytest.mark.parametrize("sql", [
+    r"select * from `region-us`.`INFORMATION\x5fSCHEMA`.COLUMNS",
+    r"select * from `region-us`.`information\u005fschema`.columns",
+    "select * from `region-us.INFORMATION_SCHEMA.COLUMNS`",
+    "select * from region-us./**/information_schema.columns",          # found in the code the scanner walks
+])
+@pytest.mark.parametrize("with_note", [False, True])
+def test_information_schema_is_refused_on_every_call_however_it_is_spelled(sql, with_note):
+    fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
+    kw = {} if with_note else {"note": None, "token": None}
+    text, _ = run(tools(fake)["bq_run_query"], sql, **kw)
+    assert text.startswith(("Refused: INFORMATION_SCHEMA is not read here", ESCAPED))
+    assert not any(r.url.path.endswith("/queries") for r in fake.requests)
+
+
+def test_an_ordinary_call_without_a_note_with_backticked_tables_and_a_regex_still_runs():
+    sql = r"select 1 from `rytangle-demo.marketing_test.stats` where REGEXP_CONTAINS(x, r'\d+') and y = 'a\\b'"
     fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
     assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
 

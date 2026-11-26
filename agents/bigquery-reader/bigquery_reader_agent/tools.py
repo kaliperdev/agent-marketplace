@@ -28,6 +28,8 @@ PROJECT_PART = re.compile(r"[A-Za-z0-9-]+")
 DATASET_PART = re.compile(r"\w+")
 EXTERNAL_USED = "This query reads through an external connection, which this agent may not use."
 ESCAPED_NAME = "This query uses an escaped name, which this agent may not use."
+INFORMATION_SCHEMA_REFUSED = ("Refused: INFORMATION_SCHEMA is not read here. Use bq_list_tables and "
+                              "bq_describe_table to see tables and columns.")
 NOT_CLOSED = "This query could not be checked: a quote or comment is not closed."
 BAD_NAME = "That table name has characters a BigQuery table name never has."
 TEXT_ROWS = 200  # rows written into the text the model reads; the table carries them all
@@ -60,13 +62,13 @@ def _table_part_ok(part: str) -> bool:
 
 
 def refuse_sql(sql: str) -> str | None:
-    """Why a call with an access note may not run this SQL, or None. One walk over the text, tracking
+    """Why a call may not run this SQL, or None. One walk over the text, tracking
     what BigQuery's lexer tracks: string literals (single, double or triple quoted, with an optional r, b,
     rb or br prefix; a backslash escapes the next character), comments (--, #, /* */) and backtick names.
     A backslash in a backtick name is refused (GoogleSQL reads string escapes there, so an escaped spelling
     of EXTERNAL_QUERY would hide the function), and so is anything left open. A raw string with a backslash
     right before a quote is refused too: lexers differ on whether that quote ends it. EXTERNAL_QUERY is
-    also looked for in the code outside strings and comments."""
+    also looked for in the code outside strings and comments, and so is INFORMATION_SCHEMA."""
     code: list[str] = []
     i, n = 0, len(sql)
     while i < n:
@@ -111,7 +113,10 @@ def refuse_sql(sql: str) -> str | None:
         else:
             code.append(c)
             i += 1
-    if "external_query" in "".join(code).lower():
+    joined = "".join(code).lower()
+    if "information_schema" in joined:
+        return INFORMATION_SCHEMA_REFUSED
+    if "external_query" in joined:
         return EXTERNAL_USED
     return None
 
@@ -256,13 +261,13 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
         if "information_schema" in sql.lower():
             # Its region-wide views can name every dataset's tables, and a dry run is not
             # documented to list them among the tables a query reads.
-            return ("Refused: INFORMATION_SCHEMA is not read here. Use bq_list_tables and "
-                    "bq_describe_table to see tables and columns."), no_rows()
+            return INFORMATION_SCHEMA_REFUSED, no_rows()
         scope = per_call() or own
-        if scope.from_note:
-            refused = EXTERNAL_USED if "external_query" in sql.lower() else refuse_sql(sql)
-            if refused:
-                return refused, no_rows()
+        # Every call is scanned: an escaped or odd spelling must not hide INFORMATION_SCHEMA from a call
+        # without a note. EXTERNAL_QUERY is only held against a call with a note.
+        refused = EXTERNAL_USED if scope.from_note and "external_query" in sql.lower() else refuse_sql(sql)
+        if refused and (scope.from_note or refused != EXTERNAL_USED):
+            return refused, no_rows()
         try:
             dry = scope.bq.dry_run(sql)
         except BigQueryError as error:

@@ -11,6 +11,8 @@ entry's `owns` text.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from langchain_core.tools import BaseTool, tool
 
@@ -41,24 +43,35 @@ def _artifact(rows: Rows) -> dict:
     return table(rows.columns, [[_plain(v) for v in row] for row in rows.rows], truncated=rows.truncated)
 
 
-def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int,
-                  max_rows: int = 1000) -> list[BaseTool]:
-    allowed = set(datasets)
-    allowed_text = ", ".join(str(d) for d in datasets)
+def _listed(scope: Scope) -> str:
+    return ", ".join(str(d) for d in scope.datasets)
 
-    def resolve(name: str) -> TableRef | str:
+
+@dataclass(frozen=True)
+class Scope:
+    """What one call may read and how: the login's BigQuery client, the datasets, and their table map."""
+    bq: BigQuery
+    datasets: tuple[DatasetRef, ...]
+    tablemap: MapCache
+
+
+def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int, max_rows: int = 1000,
+                  per_call: Callable[[], Scope | None] = lambda: None) -> list[BaseTool]:
+    """`per_call` gives the scope of a call that carries its own access (never merged with
+    the reader's own); a call without one reads the reader's own datasets, as always."""
+    own = Scope(bq, datasets, MapCache())
+
+    def resolve(name: str, scope: Scope) -> TableRef | str:
         """The table, or why it may not be read."""
         parts = name.strip().strip("`").split(".")
         if len(parts) == 2:
-            parts = [bq.project, *parts]
+            parts = [scope.bq.project, *parts]
         if len(parts) != 3 or not all(parts):
             return f"name a table as dataset.table or project.dataset.table; got {name!r}"
         ref = TableRef(*parts)
-        if ref.dataset_ref not in allowed:
-            return f"{ref} is not in a dataset this agent may read ({allowed_text})"
+        if ref.dataset_ref not in set(scope.datasets):
+            return f"{ref} is not in a dataset this agent may read ({_listed(scope)})"
         return ref
-
-    tablemap = MapCache(lambda: build_map(bq, datasets, max_bytes))
 
     @tool(response_format="content_and_artifact")
     def bq_list_tables(refresh: bool = False) -> tuple:
@@ -70,7 +83,8 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
         query; describe a table only when you need all its columns or how to query
         it. The map is kept for a day; refresh=true rebuilds it."""
         # Text only: a look-up is never rows a report could draw (rytangle router/app/reports.py).
-        return tablemap.get(refresh=bool(refresh)).text, no_rows()
+        scope = per_call() or own
+        return scope.tablemap.get(bool(refresh), lambda: build_map(scope.bq, scope.datasets, max_bytes)).text, no_rows()
 
     @tool(response_format="content_and_artifact")
     def bq_describe_table(table_name: str) -> tuple:
@@ -82,11 +96,12 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
         table you have not described yet. Name it as dataset.table or
         project.dataset.table; for daily tables (name_*) name one day, such as
         events_20210131."""
-        ref = resolve(table_name)
+        scope = per_call() or own
+        ref = resolve(table_name, scope)
         if isinstance(ref, str):
             return ref, no_rows()
         try:
-            detail = bq.table(ref)
+            detail = scope.bq.table(ref)
         except BigQueryError as error:
             return str(error), no_rows()
         head = [f"{ref}: {detail.rows} rows, {size_text(detail.size_bytes)}, last changed {detail.modified or 'unknown'}"]
@@ -106,11 +121,12 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
         """Show the first rows of one table (at most 20), read without running a query,
         so it costs nothing. Use it to see what values look like (date formats, ids,
         money units) before writing a query."""
-        ref = resolve(table_name)
+        scope = per_call() or own
+        ref = resolve(table_name, scope)
         if isinstance(ref, str):
             return ref, no_rows()
         try:
-            rows = bq.preview(ref, max(1, min(int(limit), PREVIEW_MAX)))
+            rows = scope.bq.preview(ref, max(1, min(int(limit), PREVIEW_MAX)))
         except BigQueryError as error:
             return str(error), no_rows()
         if not rows.rows:
@@ -149,27 +165,28 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
             # documented to list them among the tables a query reads.
             return ("Refused: INFORMATION_SCHEMA is not read here. Use bq_list_tables and "
                     "bq_describe_table to see tables and columns."), no_rows()
+        scope = per_call() or own
         try:
-            dry = bq.dry_run(sql)
+            dry = scope.bq.dry_run(sql)
         except BigQueryError as error:
             return str(error), no_rows()
         if dry.statement_type != "SELECT":
             return (f"Refused: only a single SELECT may run, and this is {dry.statement_type or 'not a query'}. "
                     "This agent can only read."), no_rows()
-        outside = [str(t) for t in dry.tables if t.dataset_ref not in allowed]
+        outside = [str(t) for t in dry.tables if t.dataset_ref not in set(scope.datasets)]
         if outside:
             return (f"Refused: {', '.join(outside)} is not in a dataset this agent may read "
-                    f"({allowed_text})."), no_rows()
+                    f"({_listed(scope)})."), no_rows()
         if dry.bytes > max_bytes:
             return (f"Refused: this query would scan {size_text(dry.bytes)}, over the limit of {size_text(max_bytes)} "
                     "per query. narrow the dates (filter on the date or partition column), name fewer "
                     "columns, or query a smaller table, then try again."), no_rows()
         try:
-            rows = bq.query(sql, max_bytes, max_rows)
+            rows = scope.bq.query(sql, max_bytes, max_rows)
         except BigQueryError as error:
             return str(error), no_rows()
         if not rows.rows:
-            text, empty = nothing_found("rows for this query", f"BigQuery ({allowed_text})")
+            text, empty = nothing_found("rows for this query", f"BigQuery ({_listed(scope)})")
             return text + "." + no_rows_hint(sql), empty
         count = f"{len(rows.rows)} row{'s' if len(rows.rows) != 1 else ''}"
         warnings = lint(sql, dry.tables, rows)

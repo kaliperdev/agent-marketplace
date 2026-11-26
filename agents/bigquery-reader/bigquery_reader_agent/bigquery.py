@@ -187,6 +187,8 @@ def _partition(table: dict) -> str:
 
 def _seg(part: str) -> str:
     """One path segment, with no way to add a slash, a dot-dot or a query."""
+    if not part or not part.strip("."):
+        raise BigQueryError(f"{part!r} is not a name BigQuery has.")
     return quote(part, safe="")
 
 

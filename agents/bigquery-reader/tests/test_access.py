@@ -10,7 +10,7 @@ import pytest
 
 from agent_kit import auth
 from bigquery_reader_agent import access
-from bigquery_reader_agent.bigquery import BigQuery, DatasetRef, TableRef
+from bigquery_reader_agent.bigquery import BigQuery, BigQueryError, DatasetRef, TableRef
 from bigquery_reader_agent.server import build_tools
 from bigquery_reader_agent.tablemap import MapCaches
 from bigquery_reader_agent.tools import make_bq_tools
@@ -222,7 +222,7 @@ def test_a_pass_without_a_note_still_reads_with_the_readers_own_login():
 
 @pytest.mark.parametrize("name", [
     "ledger.x/%2E%2E/%2E%2E/payroll/tables/salaries",
-    "ledger.x?alias=1", "ledger.x#frag", "ledger.x y", "finance-1234.ledger.a%2Fb", "fin/ance.ledger.entries",
+    "ledger.x?alias=1", "ledger.x#frag", "ledger.x\\y", "ledger.x`y", "ledger.x\ny", "finance-1234.ledger.a%2Fb", "fin/ance.ledger.entries",
     "finance-1234.led/ger.entries"])
 @pytest.mark.parametrize("tool_name", ["bq_describe_table", "bq_preview_table"])
 def test_a_name_with_characters_no_table_name_has_is_refused_before_any_request(name, tool_name):
@@ -232,38 +232,31 @@ def test_a_name_with_characters_no_table_name_has_is_refused_before_any_request(
     assert fake.requests == []
 
 
-def tables_in(n, dataset="finance-1234.ledger"):
-    return [f"{dataset}.t{i}" for i in range(n)]
-
-
-def many_tables(sql, n, dataset):
+def many_tables(sql, tables):
     fake = FakeBigQuery()
-    fake.dry_runs[sql] = {"statementType": "SELECT", "bytes": 10, "tables": tables_in(n, dataset)}
+    fake.dry_runs[sql] = {"statementType": "SELECT", "bytes": 10, "tables": tables}
     fake.results[sql] = {"schema": SCHEMA, "rows": [{"f": [{"v": "7"}]}], "bytes": 10}
     return fake
 
 
-def test_a_call_with_a_note_is_refused_a_query_reading_50_or_more_tables():
+def test_a_note_call_whose_dry_run_lists_60_allowed_tables_runs():
     sql = "select n from ledger.t_*"
-    fake = many_tables(sql, 50, "finance-1234.ledger")
-    text, _ = run(tools(fake)["bq_run_query"], sql)
-    assert text == ("This query reads 50 or more tables, too many to check against this agent's datasets. "
-                    "Ask for a shorter date range.")
-    assert not any(r.url.path.endswith("/queries") for r in fake.requests)
-    fake = many_tables(sql, 49, "finance-1234.ledger")
+    fake = many_tables(sql, [f"finance-1234.ledger.t{i}" for i in range(60)])
     assert run(tools(fake)["bq_run_query"], sql)[0].startswith("1 row")
 
 
-def test_a_call_without_a_note_is_not_refused_for_reading_50_tables():
-    sql = "select n from marketing_test.t_*"
-    fake = many_tables(sql, 60, f"{PROJECT}.marketing_test")
-    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
+def test_a_note_call_listing_60_tables_with_one_outside_the_list_is_refused_by_the_dataset_check():
+    sql = "select n from ledger.t_*"
+    fake = many_tables(sql, [f"finance-1234.ledger.t{i}" for i in range(59)] + [f"{PROJECT}.marketing_test.stats"])
+    text, _ = run(tools(fake)["bq_run_query"], sql)
+    assert text.startswith(f"Refused: {PROJECT}.marketing_test.stats is not in a dataset this agent may read")
+    assert not any(r.url.path.endswith("/queries") for r in fake.requests)
 
 
 @pytest.mark.parametrize("sql", ["select * from external_query('c', 'select 1')", "SELECT * FROM EXTERNAL_QUERY(\"c\", \"x\")",
                                  "select * from External_Query('c','x')"])
 def test_a_call_with_a_note_may_not_query_through_an_external_connection(sql):
-    fake = many_tables(sql, 1, "finance-1234.ledger")
+    fake = many_tables(sql, ["finance-1234.ledger.entries"])
     text, _ = run(tools(fake)["bq_run_query"], sql)
     assert text == "This query reads through an external connection, which this agent may not use."
     assert fake.requests == []
@@ -271,7 +264,7 @@ def test_a_call_with_a_note_may_not_query_through_an_external_connection(sql):
 
 def test_a_call_without_a_note_may_still_name_external_query():
     sql = "select * from external_query('c', 'select 1')"
-    fake = many_tables(sql, 1, f"{PROJECT}.marketing_test")
+    fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
     assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
 
 
@@ -290,3 +283,44 @@ def test_table_names_are_quoted_segment_by_segment_in_the_request_path():
     raw = [r.url.raw_path.decode().split("?")[0] for r in fake.requests]
     assert raw == ["/bigquery/v2/projects/p/datasets/d/tables/x%2F..%2F..%2Fother%2Ftables%2Fy",
                    "/bigquery/v2/projects/p/datasets/a%2Fb/tables"]
+
+
+@pytest.mark.parametrize("name", ["ledger.table 01", "ledger.tabl\u00e9-2020", "ledger.events_*", "ledger.t$20200101",
+                                  "ledger.caf\u0065\u0301", "ledger.\u30c6\u30fc\u30d6\u30eb"])
+def test_a_valid_table_name_is_not_refused(name):
+    fake = FakeBigQuery()
+    fake.add_table(f"finance-1234.{name}", SCHEMA)
+    text, _ = run(tools(fake)["bq_describe_table"], name)
+    assert text != "That table name has characters a BigQuery table name never has."
+    assert fake.requests
+
+
+@pytest.mark.parametrize("part", ["", ".", "..", "..."])
+def test_a_path_segment_that_is_empty_or_only_dots_is_refused_before_a_request(part):
+    fake = FakeBigQuery()
+    bq = BigQuery(httpx.Client(transport=httpx.MockTransport(fake.handler)), lambda: "t", "p")
+    with pytest.raises(BigQueryError):
+        bq.table(TableRef("p", "d", part))
+    with pytest.raises(BigQueryError):
+        bq.tables(DatasetRef("p", part))
+    assert fake.requests == []
+
+
+@pytest.mark.parametrize("sql", ["select * from `EXTERNAL\\x5fQUERY`('c','x')", "select 1 from `a\\b.c`", "select * from x.`t\\u0041`"])
+def test_a_call_with_a_note_may_not_use_an_escaped_name(sql):
+    fake = many_tables(sql, ["finance-1234.ledger.entries"])
+    text, _ = run(tools(fake)["bq_run_query"], sql)
+    assert text == "This query uses an escaped name, which this agent may not use."
+    assert fake.requests == []
+
+
+def test_a_call_without_a_note_may_use_a_backslash_in_a_quoted_name():
+    sql = "select 1 from `a\\b.c`"
+    fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
+    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
+
+
+def test_a_backslash_in_a_string_literal_is_not_an_escaped_name():
+    sql = "select n from ledger.entries where s = 'a\\nb'"
+    fake = many_tables(sql, ["finance-1234.ledger.entries"])
+    assert run(tools(fake)["bq_run_query"], sql)[0].startswith("1 row")

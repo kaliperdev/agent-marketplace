@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -23,8 +24,9 @@ from bigquery_reader_agent.layouts import lint, no_rows_hint, recognize
 from bigquery_reader_agent.tablemap import MapCache, build_map
 
 PREVIEW_MAX = 20
-MAX_TABLES_CHECKED = 50  # a call with a note reading this many tables is refused: too many to check
-PLAIN_PART = (re.compile(r"[A-Za-z0-9-]+"), re.compile(r"\w+"), re.compile(r"[\w$*-]+"))  # project, dataset, table
+PROJECT_PART = re.compile(r"[A-Za-z0-9-]+")
+DATASET_PART = re.compile(r"\w+")
+QUOTED_NAME = re.compile(r"`[^`]*`")
 BAD_NAME = "That table name has characters a BigQuery table name never has."
 TEXT_ROWS = 200  # rows written into the text the model reads; the table carries them all
 
@@ -45,6 +47,14 @@ def _lines(rows: Rows) -> list[str]:
 
 def _artifact(rows: Rows) -> dict:
     return table(rows.columns, [[_plain(v) for v in row] for row in rows.rows], truncated=rows.truncated)
+
+
+def _table_part_ok(part: str) -> bool:
+    """Google's table-name characters: Unicode letters, marks, numbers, connector and dash punctuation
+    and spaces (categories L, M, N, Pc, Pd, Zs), plus the `$` and `*` that 1.0.0 let through."""
+    return bool(part) and all(
+        c in "$*" or unicodedata.category(c)[0] in "LMN" or unicodedata.category(c) in ("Pc", "Pd", "Zs")
+        for c in part)
 
 
 def _listed(scope: Scope) -> str:
@@ -73,7 +83,7 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
             parts = [scope.bq.project, *parts]
         if len(parts) != 3 or not all(parts):
             return f"name a table as dataset.table or project.dataset.table; got {name!r}"
-        if not all(rule.fullmatch(part) for rule, part in zip(PLAIN_PART, parts)):
+        if not (PROJECT_PART.fullmatch(parts[0]) and DATASET_PART.fullmatch(parts[1]) and _table_part_ok(parts[2])):
             return BAD_NAME
         ref = TableRef(*parts)
         if ref.dataset_ref not in set(scope.datasets):
@@ -175,13 +185,13 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
         scope = per_call() or own
         if scope.from_note and "external_query" in sql.lower():
             return "This query reads through an external connection, which this agent may not use.", no_rows()
+        if scope.from_note and any("\\" in name for name in QUOTED_NAME.findall(sql)):
+            # GoogleSQL reads string escapes in a quoted name, so `EXTERNAL\x5fQUERY` would pass the check above.
+            return "This query uses an escaped name, which this agent may not use.", no_rows()
         try:
             dry = scope.bq.dry_run(sql)
         except BigQueryError as error:
             return str(error), no_rows()
-        if scope.from_note and len(dry.tables) >= MAX_TABLES_CHECKED:
-            return ("This query reads 50 or more tables, too many to check against this agent's datasets. "
-                    "Ask for a shorter date range."), no_rows()
         if dry.statement_type != "SELECT":
             return (f"Refused: only a single SELECT may run, and this is {dry.statement_type or 'not a query'}. "
                     "This agent can only read."), no_rows()

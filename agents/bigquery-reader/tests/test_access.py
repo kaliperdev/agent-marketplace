@@ -417,6 +417,19 @@ def test_check_says_unreachable_when_bigquery_could_not_be_reached():
     assert answer["state"] == "unreachable" and "ledger: could not be listed. BigQuery could not be reached" in answer["detail"]
 
 
+def test_check_stops_at_the_first_dataset_that_could_not_be_reached():
+    seen = []
+
+    def down(request):
+        seen.append(request)
+        raise httpx.ConnectError("no route")
+    with auth.serving("Bearer pass-1", NOTE):
+        answer = access.access_check(SECRET, httpx.Client(transport=httpx.MockTransport(down)), clock=lambda: AT)()
+    assert len(seen) == 1
+    assert answer["state"] == "unreachable" and "ledger: could not be listed. BigQuery could not be reached" in answer["detail"]
+    assert "payroll_summary" not in answer["detail"]
+
+
 @pytest.mark.parametrize("note, token, why", [
     (NOTE, None, "without its Google pass"), ("no-stamp-here", "pass-1", "not readable"), (WIDENED, "pass-1", "not signed")])
 def test_check_refuses_a_note_it_cannot_use_and_never_lists_with_the_readers_login(note, token, why):

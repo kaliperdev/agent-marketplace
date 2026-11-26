@@ -146,18 +146,20 @@ def access_check(secret: str | None, client: httpx.Client,
         if access is None:
             return login.result(login.REFUSED, "This check came without a data access note.")
         note, bq = access
-        failed, readable, only_unreachable = [], [], True
+        failed, readable, unreachable = [], [], False
         for dataset in note.datasets:
             name = dataset.dataset if dataset.project == note.project else str(dataset)
             try:
                 readable.append(f"{name} ({_plural(len(bq.tables(dataset)), 'table')})")
             except BigQueryError as error:
-                only_unreachable &= str(error).startswith("BigQuery could not be reached")
                 failed.append(f"{name}: could not be listed. {str(error).rstrip('.')}.")
+                if str(error).startswith("BigQuery could not be reached"):
+                    unreachable = True
+                    break  # one answer is enough: do not wait out a timeout for each of up to 100 datasets
         can = ", ".join(readable[:-1]) + (" and " if len(readable) > 1 else "") + "".join(readable[-1:])
         detail = " ".join([*failed, f"Can read {can}."] if readable else failed)
         if not failed:
             return login.result(login.OK, detail)
-        return login.result(login.UNREACHABLE if only_unreachable else login.REFUSED, detail)
+        return login.result(login.UNREACHABLE if unreachable else login.REFUSED, detail)
 
     return check

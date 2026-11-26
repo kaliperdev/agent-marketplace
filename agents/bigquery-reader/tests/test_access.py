@@ -324,3 +324,54 @@ def test_a_backslash_in_a_string_literal_is_not_an_escaped_name():
     sql = "select n from ledger.entries where s = 'a\\nb'"
     fake = many_tables(sql, ["finance-1234.ledger.entries"])
     assert run(tools(fake)["bq_run_query"], sql)[0].startswith("1 row")
+
+
+ESCAPED = "This query uses an escaped name, which this agent may not use."
+UNCLOSED = "This query could not be checked: a quote or comment is not closed."
+EXTERNAL = "This query reads through an external connection, which this agent may not use."
+
+
+def asked(sql):
+    fake = many_tables(sql, ["finance-1234.ledger.entries"])
+    return run(tools(fake)["bq_run_query"], sql)[0]
+
+
+@pytest.mark.parametrize("sql, said", [
+    (r"select '`' as a, `EXTERNAL\x5fQUERY`('c','x')", ESCAPED),          # a stray backtick in a string
+    ("-- a` note\nselect 1 from `a\\b.c`", ESCAPED),                       # ... in a comment
+    (r'select "`" as a, `a\b`.c from x', ESCAPED),                        # ... in "..."
+    (r"select /* ` */ 1 from `a\b.c`", ESCAPED),                          # ... in /* */
+    ("select 1 # `\nfrom `a\\b.c`", ESCAPED),                             # ... in a # comment
+    ("select '''` \\' \n''' as a from `a\\b.c`", ESCAPED),                # ... in a triple-quoted string
+    (r"select r'`' as a from `a\b.c`", ESCAPED),                          # ... in a raw string
+    (r"select 1 from `a\`b`", ESCAPED),                                   # an escaped backtick in a name
+    ("select 'x", UNCLOSED), ('select "x', UNCLOSED), ("select '''x'' ", UNCLOSED), ('select """x""', UNCLOSED),
+    ("select 1 /* x", UNCLOSED), ("select 1 from `a", UNCLOSED), ("select r'x", UNCLOSED), ("select rb'x", UNCLOSED),
+    (r"select r'a\' from x", UNCLOSED),                                   # a raw string's backslash before its end quote: not checkable
+    ("select 1 from `external_query`", EXTERNAL),
+    ("select * from external_/**/query('c','x')", EXTERNAL),
+])
+def test_the_scanner_refuses_what_it_cannot_trust_on_a_call_with_a_note(sql, said):
+    assert asked(sql) == said
+
+
+@pytest.mark.parametrize("sql", [
+    r"select 'it`s' as a, 'b\nc' as b, `x` from ledger.t",                # the false refusal
+    r"select 'it\'s' as a from `ledger`.t",                               # an escaped quote in a string
+    r"""select r'\d+' as a, R"\w" as b, rb'\x', BR'\y' from ledger.t""",  # raw strings with backslashes
+    "select '''a ` \\ b''' as a, \"\"\"c ` \\ \"\"\" as b from ledger.t",  # triple-quoted, with backticks
+    "select 1 -- it's `a\\b\nfrom ledger.t",                              # a comment's quote and backslash
+    "select 1 /* it's \\ ` */ from ledger.t",
+    "select 1 # a \" \nfrom ledger.t",
+    "select '' as a, \"\" as b from ledger.t",
+    r"select 1 from `finance-1234.ledger.entries` where REGEXP_CONTAINS(x, r'\d+') and y = 'a\\b'",
+    "select 1 from ledger.t -- trailing comment with no newline",
+])
+def test_the_scanner_lets_ordinary_queries_through_on_a_call_with_a_note(sql):
+    assert asked(sql).startswith("1 row")
+
+
+def test_the_scanner_is_not_applied_to_a_call_without_a_note():
+    sql = "select 'x"
+    fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
+    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")

@@ -26,7 +26,9 @@ from bigquery_reader_agent.tablemap import MapCache, build_map
 PREVIEW_MAX = 20
 PROJECT_PART = re.compile(r"[A-Za-z0-9-]+")
 DATASET_PART = re.compile(r"\w+")
-QUOTED_NAME = re.compile(r"`[^`]*`")
+EXTERNAL_USED = "This query reads through an external connection, which this agent may not use."
+ESCAPED_NAME = "This query uses an escaped name, which this agent may not use."
+NOT_CLOSED = "This query could not be checked: a quote or comment is not closed."
 BAD_NAME = "That table name has characters a BigQuery table name never has."
 TEXT_ROWS = 200  # rows written into the text the model reads; the table carries them all
 
@@ -55,6 +57,80 @@ def _table_part_ok(part: str) -> bool:
     return bool(part) and all(
         c in "$*" or unicodedata.category(c)[0] in "LMN" or unicodedata.category(c) in ("Pc", "Pd", "Zs")
         for c in part)
+
+
+def refuse_sql(sql: str) -> str | None:
+    """Why a call with an access note may not run this SQL, or None. One walk over the text, tracking
+    what BigQuery's lexer tracks: string literals (single, double or triple quoted, with an optional r, b,
+    rb or br prefix; a backslash escapes the next character), comments (--, #, /* */) and backtick names.
+    A backslash in a backtick name is refused (GoogleSQL reads string escapes there, so an escaped spelling
+    of EXTERNAL_QUERY would hide the function), and so is anything left open. A raw string with a backslash
+    right before a quote is refused too: lexers differ on whether that quote ends it. EXTERNAL_QUERY is
+    also looked for in the code outside strings and comments."""
+    code: list[str] = []
+    i, n = 0, len(sql)
+    while i < n:
+        c = sql[i]
+        if c == "-" and sql.startswith("--", i) or c == "#":
+            end = next((j for j in range(i, n) if sql[j] in "\r\n"), n)
+            i = end
+        elif sql.startswith("/*", i):
+            end = sql.find("*/", i + 2)
+            if end < 0:
+                return NOT_CLOSED
+            i = end + 2
+        elif c == "`":
+            end = i + 1
+            while end < n and sql[end] not in "`\\":
+                end += 1
+            if end >= n:
+                return NOT_CLOSED
+            if sql[end] == "\\":
+                return ESCAPED_NAME
+            code.append(sql[i:end + 1])
+            i = end + 1
+        elif c.isalnum() or c == "_":
+            end = i
+            while end < n and (sql[end].isalnum() or sql[end] == "_"):
+                end += 1
+            word = sql[i:end]
+            if word.lower() in ("r", "b", "rb", "br") and end < n and sql[end] in "'\"":
+                i = end
+                raw = "r" in word.lower()
+            else:
+                code.append(word)
+                i = end
+                continue
+            i, refused = _skip_string(sql, i, raw)
+            if refused:
+                return refused
+        elif c in "'\"":
+            i, refused = _skip_string(sql, i, False)
+            if refused:
+                return refused
+        else:
+            code.append(c)
+            i += 1
+    if "external_query" in "".join(code).lower():
+        return EXTERNAL_USED
+    return None
+
+
+def _skip_string(sql: str, i: int, raw: bool) -> tuple[int, str | None]:
+    """Past the string literal that opens at sql[i], or why it cannot be read."""
+    quote = sql[i]
+    close = quote * 3 if sql.startswith(quote * 3, i) else quote
+    i += len(close)
+    while i < len(sql):
+        if sql[i] == "\\":
+            if raw and sql[i + 1:i + 2] == quote:
+                return i, NOT_CLOSED
+            i += 2
+        elif sql.startswith(close, i):
+            return i + len(close), None
+        else:
+            i += 1
+    return i, NOT_CLOSED
 
 
 def _listed(scope: Scope) -> str:
@@ -183,11 +259,10 @@ def make_bq_tools(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int
             return ("Refused: INFORMATION_SCHEMA is not read here. Use bq_list_tables and "
                     "bq_describe_table to see tables and columns."), no_rows()
         scope = per_call() or own
-        if scope.from_note and "external_query" in sql.lower():
-            return "This query reads through an external connection, which this agent may not use.", no_rows()
-        if scope.from_note and any("\\" in name for name in QUOTED_NAME.findall(sql)):
-            # GoogleSQL reads string escapes in a quoted name, so `EXTERNAL\x5fQUERY` would pass the check above.
-            return "This query uses an escaped name, which this agent may not use.", no_rows()
+        if scope.from_note:
+            refused = EXTERNAL_USED if "external_query" in sql.lower() else refuse_sql(sql)
+            if refused:
+                return refused, no_rows()
         try:
             dry = scope.bq.dry_run(sql)
         except BigQueryError as error:

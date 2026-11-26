@@ -6,6 +6,8 @@ router. The wire is MCP's streamable HTTP with plain JSON replies:
   POST /mcp   initialize, notifications/initialized, tools/list, tools/call
   GET  /health  200 {"ok": true} when the agent can work
   POST /check   {} or {"values": {...}}: does the vendor take the login? (agent_kit/login.py)
+                With an x-agent-access header: does the access the note and
+                bearer token describe work? (the agent's access_check)
 
 A tool that returns rows (response_format="content_and_artifact") sends its
 text as `content` and its rows as `structuredContent: {"table": {...}}`, so the
@@ -68,11 +70,15 @@ def call(tool, arguments: dict, request: str | None = None, run: str | None = No
 
 
 def build_handler(tools: Sequence, ready_error: str | None = None, name: str = "agent",
-                  check: Callable[[Mapping[str, str]], dict] | None = None) -> type[BaseHTTPRequestHandler]:
+                  check: Callable[[Mapping[str, str]], dict] | None = None,
+                  access_check: Callable[[], dict] | None = None) -> type[BaseHTTPRequestHandler]:
     """`ready_error` set means the agent cannot work (a missing login): /health
     says so. Callers pass no tools in that case; tools/list lists what it is given.
     `check` asks the vendor whether it takes a login (POST /check); without one
-    there is no such route, as in every image before it existed."""
+    there is no such route, as in every image before it existed.
+    `access_check` answers a /check that carries an access note, run inside the
+    call so it reads the note and token as a tool would; without one, a /check
+    with a note is 404."""
     by_name = {tool.name: tool for tool in tools}
 
     class Handler(BaseHTTPRequestHandler):
@@ -117,6 +123,18 @@ def build_handler(tools: Sequence, ready_error: str | None = None, name: str = "
             if not isinstance(body, dict):
                 self._json(400, {"error": "send a JSON object"})
                 return
+            note = self.headers.get(auth.NOTE_HEADER)
+            if note:
+                # Neither the pass nor the note can reach the detail.
+                with auth.serving(self.headers.get("authorization"), note):
+                    try:
+                        token = auth.access_token()
+                    except auth.NotSignedIn:
+                        token = ""
+                    answer = login.run(lambda _values: access_check(), {"pass": token, "note": note})
+                log("INFO", "login", "check", agent=name, state=answer["state"], values="note")
+                self._json(200, answer)
+                return
             typed = body.get("values")
             if typed is None:
                 values, source = dict(os.environ), "saved"
@@ -132,7 +150,9 @@ def build_handler(tools: Sequence, ready_error: str | None = None, name: str = "
 
         def do_POST(self) -> None:  # noqa: N802
             ids = {"request": self.headers.get("x-request-id") or None, "run": self.headers.get("x-run-id") or None}
-            if self.path == "/check" and check is not None:
+            # A note asks the access check; no note asks the login check.
+            wanted = access_check if self.headers.get(auth.NOTE_HEADER) else check
+            if self.path == "/check" and wanted is not None:
                 self._check()
                 return
             if self.path != "/mcp":
@@ -194,7 +214,7 @@ def build_handler(tools: Sequence, ready_error: str | None = None, name: str = "
                     error(-32602, "arguments must be an object")
                     return
                 # An agent that signs in reads this call's token (agent_kit.auth).
-                with auth.serving(self.headers.get("authorization")):
+                with auth.serving(self.headers.get("authorization"), self.headers.get(auth.NOTE_HEADER)):
                     reply(call(tool, arguments, **ids))
             elif method == "ping":
                 reply({})
@@ -206,7 +226,8 @@ def build_handler(tools: Sequence, ready_error: str | None = None, name: str = "
 
 
 def serve(tools: Sequence, port: int, ready_error: str | None = None, name: str = "agent",
-          check: Callable[[Mapping[str, str]], dict] | None = None) -> None:
+          check: Callable[[Mapping[str, str]], dict] | None = None,
+          access_check: Callable[[], dict] | None = None) -> None:
     state = "ready" if not ready_error else ready_error
     log("INFO" if not ready_error else "WARN", "mcp", "listening", agent=name, port=port, state=state)
-    ThreadingHTTPServer(("0.0.0.0", port), build_handler(tools, ready_error, name, check)).serve_forever()
+    ThreadingHTTPServer(("0.0.0.0", port), build_handler(tools, ready_error, name, check, access_check)).serve_forever()

@@ -45,6 +45,16 @@ def _ms(started: float) -> int:
     return round((time.perf_counter() - started) * 1000)
 
 
+def _without_call_secrets(error: Exception) -> str:
+    """The error's text with this call's access note and pass taken out: a vendor can quote
+    what it was sent, and redact() knows neither a note nor a Google access token."""
+    try:
+        token = auth.access_token()
+    except auth.NotSignedIn:
+        token = ""
+    return login.without_values(str(error), {"note": auth.call_note() or "", "pass": token})
+
+
 def call(tool, arguments: dict, request: str | None = None, run: str | None = None) -> dict:
     """One tool call as an MCP result. A failing tool is a tool error the
     model can read, never a protocol error.
@@ -56,9 +66,9 @@ def call(tool, arguments: dict, request: str | None = None, run: str | None = No
     try:
         message = tool.invoke({"type": "tool_call", "name": tool.name, "args": arguments, "id": "mcp"})
     except Exception as error:  # noqa: BLE001 - reported to the caller as text
-        log("WARN", "mcp", "call", tool=tool.name, request=request, run=run, ms=_ms(started), ok=False,
-            error=f"{type(error).__name__}: {redact(error)}")
-        return {"content": [{"type": "text", "text": f"{type(error).__name__}: {redact(error)}"}], "isError": True}
+        shown = f"{type(error).__name__}: {redact(_without_call_secrets(error))}"
+        log("WARN", "mcp", "call", tool=tool.name, request=request, run=run, ms=_ms(started), ok=False, error=shown)
+        return {"content": [{"type": "text", "text": shown}], "isError": True}
     content = message.content if isinstance(message.content, str) else json.dumps(message.content)
     result: dict = {"content": [{"type": "text", "text": content}], "isError": False}
     artifact = getattr(message, "artifact", None)

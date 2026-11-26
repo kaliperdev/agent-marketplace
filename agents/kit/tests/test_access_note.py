@@ -20,6 +20,12 @@ def whose() -> str:
     return f"{auth.call_note()} / {auth.access_token()}"
 
 
+@tool
+def quotes() -> str:
+    """Fails with the note and the pass in its message, as a vendor's error can."""
+    raise RuntimeError(f"upstream refused {auth.call_note()} with ya29.google-pass-9 (sent {auth.access_token()})")
+
+
 @pytest.fixture
 def checker():
     servers = []
@@ -53,6 +59,18 @@ def test_a_tool_reads_the_note_sent_with_its_own_call(serve):  # noqa: F811
     assert reply["result"]["content"][0]["text"] == "note-1 / at-1"
     _, _, reply = rpc(base, "tools/call", {"name": "whose", "arguments": {}}, headers={"authorization": "Bearer at-2"})
     assert reply["result"]["content"][0]["text"] == "None / at-2"  # nothing is kept between calls
+
+
+def test_a_failing_tool_never_shows_the_calls_note_or_pass(serve, capsys):  # noqa: F811
+    note = "eyJhZ2VudCI6ImZpbmFuY2UifQ.vpa-4t3DvylOpHBLny7JHOuj1-LoAIMKWs"  # two parts: redact() does not know it
+    _, _, reply = rpc(serve([quotes]), "tools/call", {"name": "quotes", "arguments": {}},
+                      headers={"authorization": "Bearer ya29.google-pass-9", "x-agent-access": note})
+    text = reply["result"]["content"][0]["text"]
+    out = capsys.readouterr()
+    assert reply["result"]["isError"] is True and "upstream refused" in text
+    for secret in (note, "vpa-4t3DvylOpHBLny7JHOuj1", "ya29.google-pass-9"):
+        assert secret not in text + out.out + out.err
+    assert "ok=false" in out.err
 
 
 def test_check_with_a_note_runs_the_access_check_inside_the_call(checker, capsys):

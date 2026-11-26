@@ -18,6 +18,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -87,7 +88,7 @@ def read_note(raw: str, secret: str | None, now: float) -> Note:
     listed, at = payload.get("datasets"), payload.get("at")
     if (not isinstance(listed, list) or not 1 <= len(listed) <= MAX_DATASETS
             or not all(isinstance(d, str) and d and not any(c.isspace() or c == "," for c in d) for d in listed)
-            or isinstance(at, bool) or not isinstance(at, (int, float))):
+            or isinstance(at, bool) or not isinstance(at, (int, float)) or not math.isfinite(at)):
         raise AccessRefused(NOT_READABLE)
     try:
         datasets = parse_datasets(" ".join(listed), project)
@@ -123,6 +124,6 @@ def per_call(secret: str | None, client: httpx.Client, maps: MapCaches,
         if access is None:
             return None
         note, bq = access
-        return Scope(bq, note.datasets, maps.cache(note.key))
+        return Scope(bq, note.datasets, maps.cache(note.key), from_note=True)
 
     return scope

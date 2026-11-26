@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from urllib.parse import quote
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -184,6 +185,11 @@ def _partition(table: dict) -> str:
     return ""
 
 
+def _seg(part: str) -> str:
+    """One path segment, with no way to add a slash, a dot-dot or a query."""
+    return quote(part, safe="")
+
+
 class BigQuery:
     def __init__(self, client: httpx.Client, token_provider: TokenProvider, project: str) -> None:
         self._client = client
@@ -206,12 +212,12 @@ class BigQuery:
 
     @staticmethod
     def _table_path(ref: TableRef) -> str:
-        return f"/projects/{ref.project}/datasets/{ref.dataset}/tables/{ref.table}"
+        return f"/projects/{_seg(ref.project)}/datasets/{_seg(ref.dataset)}/tables/{_seg(ref.table)}"
 
     def tables(self, dataset: DatasetRef) -> list[TableInfo]:
         found, token = [], None
         while True:
-            data = self._call("GET", f"/projects/{dataset.project}/datasets/{dataset.dataset}/tables",
+            data = self._call("GET", f"/projects/{_seg(dataset.project)}/datasets/{_seg(dataset.dataset)}/tables",
                               params={"maxResults": 1000, **({"pageToken": token} if token else {})})
             for t in data.get("tables", []):
                 r = t["tableReference"]

@@ -3,13 +3,14 @@
 import base64
 import hashlib
 import hmac
+import json
 
 import httpx
 import pytest
 
 from agent_kit import auth
 from bigquery_reader_agent import access
-from bigquery_reader_agent.bigquery import BigQuery, DatasetRef
+from bigquery_reader_agent.bigquery import BigQuery, DatasetRef, TableRef
 from bigquery_reader_agent.server import build_tools
 from bigquery_reader_agent.tablemap import MapCaches
 from bigquery_reader_agent.tools import make_bq_tools
@@ -191,3 +192,101 @@ def test_build_tools_checks_notes_with_the_key_it_is_given(tmp_path):
     with auth.serving(None, None):               # no note: the reader's own datasets, as in 1.0.0
         text, _ = describe.func("finance-1234.ledger.entries")
     assert "marketing_test" in text
+
+
+VECTOR = ("eyJhZ2VudCI6ImZpbmFuY2UiLCJhdCI6MTc2NDExNTIwMCwiZGF0YXNldHMiOlsiZmluYW5jZS0xMjM0LmxlZGdlciIsImZpbmFuY2UtMTIzNC5wYXlyb2xs"
+          "X3N1bW1hcnkiXSwibG9naW4iOiIzIiwicHJvamVjdCI6ImZpbmFuY2UtMTIzNCIsInYiOjF9.vpa-4t3DvylOpHBLny7JHOuj1-LoAIMKWs-ORrRcDK4")
+
+
+def test_the_helper_writes_the_contracts_test_vector_exactly():
+    assert NOTE == VECTOR
+    assert access.read_note(VECTOR, SECRET, AT).project == "finance-1234"
+
+
+@pytest.mark.parametrize("at", ["NaN", "Infinity", "-Infinity"])
+def test_a_signed_at_that_is_not_a_finite_number_is_not_readable(at):
+    body = json.dumps(payload()).replace(str(AT), at)
+    assert at in body
+    text = base64.urlsafe_b64encode(body.encode()).decode().rstrip("=")
+    stamp = base64.urlsafe_b64encode(hmac.new(SECRET.encode(), text.encode(), hashlib.sha256).digest()).decode().rstrip("=")
+    with pytest.raises(access.AccessRefused, match="not readable"):
+        access.read_note(f"{text}.{stamp}", SECRET, AT)
+
+
+def test_a_pass_without_a_note_still_reads_with_the_readers_own_login():
+    fake = FakeBigQuery()
+    fake.add_table(f"{PROJECT}.marketing_test.stats", SCHEMA)
+    run(tools(fake)["bq_describe_table"], "marketing_test.stats", note=None, token="pass-1")
+    assert fake.requests[-1].headers["authorization"] == "Bearer own-token"
+
+
+@pytest.mark.parametrize("name", [
+    "ledger.x/%2E%2E/%2E%2E/payroll/tables/salaries",
+    "ledger.x?alias=1", "ledger.x#frag", "ledger.x y", "finance-1234.ledger.a%2Fb", "fin/ance.ledger.entries",
+    "finance-1234.led/ger.entries"])
+@pytest.mark.parametrize("tool_name", ["bq_describe_table", "bq_preview_table"])
+def test_a_name_with_characters_no_table_name_has_is_refused_before_any_request(name, tool_name):
+    fake = FakeBigQuery()
+    text, _ = run(tools(fake)[tool_name], name)
+    assert text == "That table name has characters a BigQuery table name never has."
+    assert fake.requests == []
+
+
+def tables_in(n, dataset="finance-1234.ledger"):
+    return [f"{dataset}.t{i}" for i in range(n)]
+
+
+def many_tables(sql, n, dataset):
+    fake = FakeBigQuery()
+    fake.dry_runs[sql] = {"statementType": "SELECT", "bytes": 10, "tables": tables_in(n, dataset)}
+    fake.results[sql] = {"schema": SCHEMA, "rows": [{"f": [{"v": "7"}]}], "bytes": 10}
+    return fake
+
+
+def test_a_call_with_a_note_is_refused_a_query_reading_50_or_more_tables():
+    sql = "select n from ledger.t_*"
+    fake = many_tables(sql, 50, "finance-1234.ledger")
+    text, _ = run(tools(fake)["bq_run_query"], sql)
+    assert text == ("This query reads 50 or more tables, too many to check against this agent's datasets. "
+                    "Ask for a shorter date range.")
+    assert not any(r.url.path.endswith("/queries") for r in fake.requests)
+    fake = many_tables(sql, 49, "finance-1234.ledger")
+    assert run(tools(fake)["bq_run_query"], sql)[0].startswith("1 row")
+
+
+def test_a_call_without_a_note_is_not_refused_for_reading_50_tables():
+    sql = "select n from marketing_test.t_*"
+    fake = many_tables(sql, 60, f"{PROJECT}.marketing_test")
+    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
+
+
+@pytest.mark.parametrize("sql", ["select * from external_query('c', 'select 1')", "SELECT * FROM EXTERNAL_QUERY(\"c\", \"x\")",
+                                 "select * from External_Query('c','x')"])
+def test_a_call_with_a_note_may_not_query_through_an_external_connection(sql):
+    fake = many_tables(sql, 1, "finance-1234.ledger")
+    text, _ = run(tools(fake)["bq_run_query"], sql)
+    assert text == "This query reads through an external connection, which this agent may not use."
+    assert fake.requests == []
+
+
+def test_a_call_without_a_note_may_still_name_external_query():
+    sql = "select * from external_query('c', 'select 1')"
+    fake = many_tables(sql, 1, f"{PROJECT}.marketing_test")
+    assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
+
+
+def test_table_names_are_quoted_segment_by_segment_in_the_request_path():
+    fake = FakeBigQuery()
+    fake.add_table("p.d.we ird$1", SCHEMA)
+    bq = BigQuery(httpx.Client(transport=httpx.MockTransport(fake.handler)), lambda: "t", "p")
+    try:
+        bq.table(TableRef("p", "d", "x/../../other/tables/y"))
+    except Exception:
+        pass
+    try:
+        bq.tables(DatasetRef("p", "a/b"))
+    except Exception:
+        pass
+    raw = [r.url.raw_path.decode().split("?")[0] for r in fake.requests]
+    assert raw == ["/bigquery/v2/projects/p/datasets/d/tables/x%2F..%2F..%2Fother%2Ftables%2Fy",
+                   "/bigquery/v2/projects/p/datasets/a%2Fb/tables"]

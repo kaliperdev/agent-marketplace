@@ -1,15 +1,17 @@
 import json
 import os
 import stat
+import tomllib
 from pathlib import Path
 
+from bigquery_reader_agent import access
 from bigquery_reader_agent import server as server_module
 from bigquery_reader_agent.server import build_tools, key_path
 
 KEY = '{"type": "service_account", "client_email": "marketing-agent@example.invalid"}'
 ENV = {"GOOGLE_SA_JSON": KEY, "BQ_PROJECT": "rytangle-demo", "BQ_DATASETS": "marketing_test"}
 
-CATALOG = json.loads((Path(__file__).resolve().parents[1] / "catalog-1.0.0.json").read_text(encoding="utf-8"))
+CATALOG = json.loads((Path(__file__).resolve().parents[1] / "catalog-1.1.0.json").read_text(encoding="utf-8"))
 
 
 def test_the_server_offers_exactly_the_tools_its_catalog_entry_names(tmp_path):
@@ -76,3 +78,10 @@ def test_the_reader_checks_data_access_but_never_its_own_login(monkeypatch):
         monkeypatch.setenv(key, value)
     server_module.main()
     assert callable(seen["access_check"]) and seen.get("check") is None
+
+
+def test_the_entry_is_1_1_0_and_matches_the_package():
+    assert CATALOG["version"] == "1.1.0" and CATALOG["service"]["image"] == "kaliper/agent-bigquery-reader:1.1.0"
+    assert "access_notes" not in CATALOG["service"] and access.NOTE_KEY_SETTING == "ACCESS_NOTE_KEY"
+    pyproject = tomllib.loads((Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["version"] == CATALOG["version"]

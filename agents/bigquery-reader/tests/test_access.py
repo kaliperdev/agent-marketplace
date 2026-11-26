@@ -375,3 +375,53 @@ def test_the_scanner_is_not_applied_to_a_call_without_a_note():
     sql = "select 'x"
     fake = many_tables(sql, [f"{PROJECT}.marketing_test.stats"])
     assert run(tools(fake)["bq_run_query"], sql, note=None, token=None)[0].startswith("1 row")
+
+
+def test_check_lists_each_dataset_with_the_calls_pass():
+    fake = FakeBigQuery()
+    for table in ("a", "b"):
+        fake.add_table(f"finance-1234.ledger.{table}", SCHEMA)
+    fake.add_table("finance-1234.payroll_summary.p", SCHEMA)
+    check = access.access_check(SECRET, httpx.Client(transport=httpx.MockTransport(fake.handler)), clock=lambda: AT)
+    with auth.serving("Bearer pass-1", NOTE):
+        assert check() == {"state": "ok", "detail": "Can read ledger (2 tables) and payroll_summary (1 table)."}
+    assert {r.headers["authorization"] for r in fake.requests} == {"Bearer pass-1"}
+
+
+def test_check_names_a_dataset_its_login_cannot_list_and_what_it_can():
+    fake = FakeBigQuery()
+    fake.add_table("finance-1234.ledger.a", SCHEMA)
+    fake.refuse_datasets.add("finance-1234.payroll_summary")
+    with auth.serving("Bearer pass-1", NOTE):
+        answer = access.access_check(SECRET, httpx.Client(transport=httpx.MockTransport(fake.handler)), clock=lambda: AT)()
+    assert answer == {"state": "refused", "detail": (
+        "payroll_summary: could not be listed. BigQuery refused (403): Access Denied: Dataset "
+        "finance-1234:payroll_summary: Permission bigquery.tables.list denied. Can read ledger (1 table).")}
+
+
+def test_check_names_a_dataset_of_another_project_in_full_and_joins_three_with_commas():
+    note = sign(payload(datasets=["finance-1234.a", "finance-1234.b", "other-9.c"]), SECRET)
+    fake = FakeBigQuery()
+    for ref in ("finance-1234.a.t", "finance-1234.b.t", "other-9.c.t"):
+        fake.add_table(ref, SCHEMA)
+    with auth.serving("Bearer pass-1", note):
+        answer = access.access_check(SECRET, httpx.Client(transport=httpx.MockTransport(fake.handler)), clock=lambda: AT)()
+    assert answer == {"state": "ok", "detail": "Can read a (1 table), b (1 table) and other-9.c (1 table)."}
+
+
+def test_check_says_unreachable_when_bigquery_could_not_be_reached():
+    def down(request):
+        raise httpx.ConnectError("no route")
+    with auth.serving("Bearer pass-1", NOTE):
+        answer = access.access_check(SECRET, httpx.Client(transport=httpx.MockTransport(down)), clock=lambda: AT)()
+    assert answer["state"] == "unreachable" and "ledger: could not be listed. BigQuery could not be reached" in answer["detail"]
+
+
+@pytest.mark.parametrize("note, token, why", [
+    (NOTE, None, "without its Google pass"), ("no-stamp-here", "pass-1", "not readable"), (WIDENED, "pass-1", "not signed")])
+def test_check_refuses_a_note_it_cannot_use_and_never_lists_with_the_readers_login(note, token, why):
+    fake = FakeBigQuery()
+    with auth.serving(f"Bearer {token}" if token else None, note):
+        answer = access.access_check(SECRET, httpx.Client(transport=httpx.MockTransport(fake.handler)), clock=lambda: AT)()
+    assert answer["state"] == "refused" and why in answer["detail"] and fake.requests == []
+    assert NOTE.split(".")[1] not in answer["detail"]

@@ -92,8 +92,12 @@ def build_tools(env: Mapping[str, str], client: httpx.Client | None = None,
 
 
 def main() -> None:
-    tools, problem = build_tools(os.environ)
-    serve(tools, int(os.environ.get("PORT") or 8080), problem, name="bigquery-reader")
+    client = httpx.Client(timeout=HTTP_TIMEOUT_SECONDS)
+    tools, problem = build_tools(os.environ, client)
+    secret = os.environ.get(access.NOTE_KEY_SETTING, "").strip() or None
+    # No login check: the reader's own Connection tab keeps saying it cannot check its login.
+    serve(tools, int(os.environ.get("PORT") or 8080), problem, name="bigquery-reader",
+          access_check=access.access_check(secret, client))
 
 
 if __name__ == "__main__":

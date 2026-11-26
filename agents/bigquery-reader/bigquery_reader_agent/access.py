@@ -25,8 +25,8 @@ from dataclasses import dataclass
 
 import httpx
 
-from agent_kit import auth
-from bigquery_reader_agent.bigquery import BigQuery, DatasetRef, parse_datasets
+from agent_kit import auth, login
+from bigquery_reader_agent.bigquery import BigQuery, BigQueryError, DatasetRef, parse_datasets
 from bigquery_reader_agent.tablemap import MapCaches
 from bigquery_reader_agent.tools import Scope
 
@@ -127,3 +127,37 @@ def per_call(secret: str | None, client: httpx.Client, maps: MapCaches,
         return Scope(bq, note.datasets, maps.cache(note.key), from_note=True)
 
     return scope
+
+
+def _plural(count: int, word: str) -> str:
+    return f"{count} {word}" if count == 1 else f"{count} {word}s"
+
+
+def access_check(secret: str | None, client: httpx.Client,
+                 clock: Callable[[], float] = time.time) -> Callable[[], dict]:
+    """The answer to a /check that carries a note (Test access): each of the note's datasets listed with
+    the call's pass (tables.list is free). Never the reader's own login; a note that cannot be trusted is
+    refused. The answer holds dataset names and BigQuery's own words, never the note, the pass or the key."""
+    def check() -> dict:
+        try:
+            access = call_access(secret, client, clock())
+        except AccessRefused as error:
+            return login.result(login.REFUSED, str(error))
+        if access is None:
+            return login.result(login.REFUSED, "This check came without a data access note.")
+        note, bq = access
+        failed, readable, only_unreachable = [], [], True
+        for dataset in note.datasets:
+            name = dataset.dataset if dataset.project == note.project else str(dataset)
+            try:
+                readable.append(f"{name} ({_plural(len(bq.tables(dataset)), 'table')})")
+            except BigQueryError as error:
+                only_unreachable &= str(error).startswith("BigQuery could not be reached")
+                failed.append(f"{name}: could not be listed. {str(error).rstrip('.')}.")
+        can = ", ".join(readable[:-1]) + (" and " if len(readable) > 1 else "") + "".join(readable[-1:])
+        detail = " ".join([*failed, f"Can read {can}."] if readable else failed)
+        if not failed:
+            return login.result(login.OK, detail)
+        return login.result(login.UNREACHABLE if only_unreachable else login.REFUSED, detail)
+
+    return check

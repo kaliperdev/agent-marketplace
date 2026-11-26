@@ -3,6 +3,7 @@ import os
 import stat
 from pathlib import Path
 
+from bigquery_reader_agent import server as server_module
 from bigquery_reader_agent.server import build_tools, key_path
 
 KEY = '{"type": "service_account", "client_email": "marketing-agent@example.invalid"}'
@@ -66,3 +67,12 @@ def test_the_guide_grants_data_viewer_per_dataset_and_only_job_user_on_the_proje
     assert "Data Viewer on the whole project" not in joined
     assert any("BigQuery Job User" in t and "project" in t for t in texts)
     assert any("BigQuery Data Viewer" in t and "**Share**" in t and "dataset" in t for t in texts)
+
+
+def test_the_reader_checks_data_access_but_never_its_own_login(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(server_module, "serve", lambda tools, port, problem, **kw: seen.update(kw))
+    for key, value in {**ENV, "ACCESS_NOTE_KEY": "k"}.items():
+        monkeypatch.setenv(key, value)
+    server_module.main()
+    assert callable(seen["access_check"]) and seen.get("check") is None

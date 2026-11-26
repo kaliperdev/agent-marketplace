@@ -97,3 +97,14 @@ def test_an_access_check_that_breaks_is_unreachable_never_refused(checker):
         raise RuntimeError("boom")
     status, answer = post(checker(access_check=broken), {}, {"x-agent-access": "note-1"})
     assert status == 200 and answer["state"] == "unreachable"
+
+
+def test_an_agent_with_both_checks_runs_only_the_one_the_call_asks_for(checker):
+    ran = []
+    base = checker(check=lambda values: ran.append("check") or {"state": "ok", "detail": ""},
+                   access_check=lambda: ran.append("access_check") or {"state": "ok", "detail": ""})
+    assert post(base, {}, {"x-agent-access": "note-1"})[0] == 200
+    assert ran == ["access_check"]
+    ran.clear()
+    assert post(base, {}, {})[0] == 200
+    assert ran == ["check"]

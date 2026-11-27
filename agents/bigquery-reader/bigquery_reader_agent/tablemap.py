@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 import threading
 import time
+from collections import OrderedDict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -22,6 +23,7 @@ from bigquery_reader_agent.layouts import recognize
 
 MAX_TABLES = 60          # in detail; names only beyond
 MAX_COLUMNS = 12
+MAX_MAPS = 20            # one per access (login, project, datasets); the least recently used is dropped
 RANGE_SCAN_LIMIT = 200_000_000   # a date range is worth a little, never much
 DATE_COLUMNS = ("data_date", "snapshot_date", "segments_date", "date_start", "date", "_DATA_DATE")
 DATE_TYPES = {"DATE", "DATETIME", "TIMESTAMP"}
@@ -155,18 +157,39 @@ def build_map(bq: BigQuery, datasets: tuple[DatasetRef, ...], max_bytes: int, bu
 class MapCache:
     """One map, kept for `ttl_s`; a partial map is never kept, so the next call tries again."""
 
-    def __init__(self, build: Callable[[], TableMap], ttl_s: float = 86_400,
+    def __init__(self, build: Callable[[], TableMap] | None = None, ttl_s: float = 86_400,
                  clock: Callable[[], float] = time.monotonic) -> None:
         self._build, self._ttl, self._clock = build, ttl_s, clock
         self._lock = threading.Lock()
         self._held = None
         self._at = 0.0
 
-    def get(self, refresh: bool = False):
+    def get(self, refresh: bool = False, build: Callable[[], TableMap] | None = None):
+        """A build the caller gives wins, so a map rebuilt after a day uses that call's pass."""
         with self._lock:
             if refresh or self._held is None or self._clock() - self._at > self._ttl:
-                made = self._build()
+                made = (build or self._build)()
                 if getattr(made, "partial", []):
                     return made
                 self._held, self._at = made, self._clock()
             return self._held
+
+
+class MapCaches:
+    """The table maps of the accesses seen lately, one per access: the least recently used past `size` is dropped."""
+
+    def __init__(self, size: int = MAX_MAPS) -> None:
+        self._size = size
+        self._lock = threading.Lock()
+        self._caches: OrderedDict[tuple, MapCache] = OrderedDict()
+
+    def cache(self, key: tuple) -> MapCache:
+        with self._lock:
+            found = self._caches.get(key)
+            if found is None:
+                found = self._caches[key] = MapCache()
+                while len(self._caches) > self._size:
+                    self._caches.popitem(last=False)
+            else:
+                self._caches.move_to_end(key)
+            return found

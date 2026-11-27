@@ -5,7 +5,7 @@ from datetime import datetime
 import httpx
 
 from bigquery_reader_agent.bigquery import BigQuery, DatasetRef
-from bigquery_reader_agent.tablemap import MapCache, build_map, range_sql
+from bigquery_reader_agent.tablemap import MAX_MAPS, MapCache, MapCaches, TableMap, build_map, range_sql
 from bq_fake import FakeBigQuery, cells
 
 PROJECT = "rytangle-demo"
@@ -142,3 +142,20 @@ def test_a_partial_map_is_not_kept():
     cache.get()
     cache.get()
     assert len(calls) == 2
+
+
+def test_a_map_is_rebuilt_with_the_build_its_caller_gives():
+    clock = [0.0]
+    cache = MapCache(ttl_s=10, clock=lambda: clock[0])
+    assert cache.get(build=lambda: TableMap("first")).text == "first"
+    clock[0] = 11.0
+    assert cache.get(build=lambda: TableMap("second")).text == "second"
+
+
+def test_only_the_most_recently_used_maps_are_kept():
+    caches = MapCaches(size=2)
+    a, b = caches.cache(("a",)), caches.cache(("b",))
+    assert caches.cache(("a",)) is a          # a is now the most recent, so b goes next
+    caches.cache(("c",))
+    assert caches.cache(("a",)) is a and caches.cache(("b",)) is not b
+    assert MAX_MAPS == 20

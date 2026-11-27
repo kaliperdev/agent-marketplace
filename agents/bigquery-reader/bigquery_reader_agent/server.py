@@ -5,7 +5,9 @@ passes the key file's CONTENTS (a path on that server means nothing in here),
 which are written to a private file for Google's library. A path still works,
 for running this by hand. BQ_PROJECT is the project queries run (and are billed)
 in; BQ_DATASETS the datasets the agent may read; BQ_MAX_GB the most one query
-may scan (1 GB when blank).
+may scan (1 GB when blank). ACCESS_NOTE_KEY, when the router gives one, checks the
+signed note a call may carry (access.py): that call then reads with its own pass,
+project and datasets, and a call without a note reads as above.
 
 The key and token code is copied from agents/gsc on purpose: agent_kit has no
 Google dependency, and each agent carries its own, as gdocs, gdrive and gsc do.
@@ -25,7 +27,9 @@ import httpx
 
 from agent_kit.mcp_server import serve
 from agent_kit.settings import credential, missing
+from bigquery_reader_agent import access
 from bigquery_reader_agent.bigquery import SCOPE, BigQuery, parse_datasets, parse_max_bytes
+from bigquery_reader_agent.tablemap import MapCaches
 from bigquery_reader_agent.tools import make_bq_tools
 
 HTTP_TIMEOUT_SECONDS = 60.0
@@ -82,12 +86,18 @@ def build_tools(env: Mapping[str, str], client: httpx.Client | None = None,
         return [], f"BQ_MAX_GB: {error}"
     client = client or httpx.Client(timeout=HTTP_TIMEOUT_SECONDS)
     token_provider = service_account_token_provider(key_path(credential(env, "GOOGLE_SA_JSON"), key_dir), (SCOPE,))
-    return list(make_bq_tools(BigQuery(client, token_provider, project), datasets, max_bytes)), None
+    secret = env.get(access.NOTE_KEY_SETTING, "").strip() or None
+    per_call = access.per_call(secret, client, MapCaches())
+    return list(make_bq_tools(BigQuery(client, token_provider, project), datasets, max_bytes, per_call=per_call)), None
 
 
 def main() -> None:
-    tools, problem = build_tools(os.environ)
-    serve(tools, int(os.environ.get("PORT") or 8080), problem, name="bigquery-reader")
+    client = httpx.Client(timeout=HTTP_TIMEOUT_SECONDS)
+    tools, problem = build_tools(os.environ, client)
+    secret = os.environ.get(access.NOTE_KEY_SETTING, "").strip() or None
+    # No login check: the reader's own Connection tab keeps saying it cannot check its login.
+    serve(tools, int(os.environ.get("PORT") or 8080), problem, name="bigquery-reader",
+          access_check=access.access_check(secret, client))
 
 
 if __name__ == "__main__":
